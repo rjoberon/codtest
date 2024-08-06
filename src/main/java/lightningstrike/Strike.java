@@ -2,11 +2,8 @@ package lightningstrike;
 
 import java.awt.Rectangle;
 import java.io.FileInputStream;
-import java.awt.Event;
-import java.awt.LayoutManager;
 import java.awt.BorderLayout;
 import java.awt.Panel;
-import java.awt.Component;
 import java.awt.Menu;
 import java.awt.MenuBar;
 import java.awt.Font;
@@ -15,7 +12,6 @@ import java.awt.Dimension;
 import java.net.URL;
 import java.io.InputStream;
 import java.awt.Image;
-import java.awt.Toolkit;
 import java.awt.MenuItem;
 import java.awt.FileDialog;
 import java.awt.Frame;
@@ -36,9 +32,9 @@ public class Strike extends Frame implements ActionListener, WindowListener
 {
     ImageCanvas imageArea;
     private Lightning parent;
-    private String fileName;
+//    private String fileName;
     private FileDialog openDialog;
-    private FileDialog saveDialog;
+//    private FileDialog saveDialog;
     private MenuItem openMenuItem;
     private MenuItem propertyMenuItem;
     private MenuItem aboutMenuItem;
@@ -50,18 +46,18 @@ public class Strike extends Frame implements ActionListener, WindowListener
     private MenuItem halfSizeMenuItem;
     private MenuItem byteStreamMenuItem;
     private MenuItem refreshMenuItem;
-    private MenuItem redecompMenuItem;
+//    private MenuItem redecompMenuItem;
     private AboutDialog aboutDialog;
     private ErrorMessage errorDialog;
     private propertyDialog myDialog;
-    private Toolkit strikeToolkit;
+//    private Toolkit strikeToolkit;
     private Image memoryImage;
-    private Image[] manyImages;
-    private Image firstImage;
-    private static boolean first;
-    private InputStream inputCODFile;
-    private int[] memoryData;
-    private int count;
+//    private Image[] manyImages;
+//    private Image firstImage;
+//    private static boolean first;
+//    private InputStream inputCODFile;
+//    private int[] memoryData;
+//    private int count;
     private boolean firstTime;
     public CCodImage oneCodImage;
     public URL tempURL;
@@ -82,7 +78,7 @@ public class Strike extends Frame implements ActionListener, WindowListener
     private String[] fileList;
     public boolean isDecompressing;
     private winSelector select;
-    private boolean interuptNow;
+//    private boolean interuptNow; //Was a "write only" variable
     public Bargauge gauge;
     
     public Strike() {
@@ -95,7 +91,7 @@ public class Strike extends Frame implements ActionListener, WindowListener
 
         this.progressiveDisplay = false;
         this.isDecompressing = false;
-        this.interuptNow = false;
+//        this.interuptNow = false;
         this.setBackground(Color.gray);
         this.setFont(new Font("TimesRoman", 0, 12));
         this.isApplet = false;
@@ -115,7 +111,7 @@ public class Strike extends Frame implements ActionListener, WindowListener
         // Constructor code...
         this.addWindowListener(this);
         this.isDecompressing = false;
-        this.interuptNow = false;
+//        this.interuptNow = false;
         this.setBackground(Color.gray);
         this.setFont(new Font("TimesRoman", 0, 12));
         this.isApplet = true;
@@ -360,7 +356,7 @@ public class Strike extends Frame implements ActionListener, WindowListener
                             this.imageSize = this.oneCodImage.getImageSize();
                             this.displayWidth = this.imageSize.width;
                             this.displayHeight = this.imageSize.height;
-                            final Rectangle bounds = this.imageArea.bounds();
+                            final Rectangle bounds = this.imageArea.getBounds();
                             this.Width += this.imageSize.width - bounds.width;
                             this.Height += this.imageSize.height - bounds.height;
                             if (this.Width <= 100) {
@@ -373,7 +369,7 @@ public class Strike extends Frame implements ActionListener, WindowListener
                         this.imageArea.setImage(this.memoryImage);
                         this.imageArea.paint(this.imageArea.getGraphics());
                     }
-                    this.interuptNow = false;
+//                    this.interuptNow = false;
                     this.oneCodImage.EndGenerateImage();
                 }
                 this.tempFile.close();
@@ -456,7 +452,7 @@ public class Strike extends Frame implements ActionListener, WindowListener
         this.isDecompressing = false;
     }
     
-    static {
-        Strike.first = true;
-    }
+//    static {
+//        Strike.first = true;
+//   }
 }
