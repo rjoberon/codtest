@@ -28,12 +28,12 @@ public class CYIQ extends Constants
     public CYIQ() {
         this.codec = new CCode();
         this.levelDataSize = new int[11];
-        this.quantizer = new short[31];
-        this.maskQuantizer = new short[31];
-        this.threshold = new short[31];
-        this.maskThreshold = new short[31];
-        this.min = new short[31];
-        this.max = new short[31];
+        this.quantizer = new short[Constants.MAX_SUBBANDS];
+        this.maskQuantizer = new short[Constants.MAX_SUBBANDS];
+        this.threshold = new short[Constants.MAX_SUBBANDS];
+        this.maskThreshold = new short[Constants.MAX_SUBBANDS];
+        this.min = new short[Constants.MAX_SUBBANDS];
+        this.max = new short[Constants.MAX_SUBBANDS];
         this.width = 0;
         this.height = 0;
         this.levels = 5;
@@ -245,13 +245,13 @@ public class CYIQ extends Constants
             int n10 = array2[n2];
             for (short n11 = 0; n11 < n5; ++n11) {
                 for (short n12 = 0; n12 < n6; ++n12) {
-                    if (yiqP[n10] == -126) {
+                    if (yiqP[n10] == Constants.ZEROTREENODE) {
                         yiqP[n10++] = 0;
                     }
                     else {
                         yiqP[n10] = array[n4++];
                         if (yiqP[n10] == n9) {
-                            this.SetUpZeroTree((short)(n11 + array3[n2]), (short)(n12 + array4[n2]), n, (short)(-126), (short)(this.levels - this.zeroLevels));
+                            this.SetUpZeroTree((short)(n11 + array3[n2]), (short)(n12 + array4[n2]), n, (short)(Constants.ZEROTREENODE), (short)(this.levels - this.zeroLevels));
                             yiqP[n10] = 0;
                         }
                         ++n10;
