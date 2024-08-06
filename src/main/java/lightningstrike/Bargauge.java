@@ -30,10 +30,10 @@ public class Bargauge extends Canvas
     }
     
     public void resize(final int n, final int n2) {
-        this.reshape(this.getLocation().x, this.getLocation().y, n, n2);
+        this.setBounds(this.getLocation().x, this.getLocation().y, n, n2);
     }
     
-    public void reshape(final int x, final int y, final int n, final int n2) {
+    public void setBounds(final int x, final int y, final int n, final int n2) {
         super.setBounds(x, y, n, n2);
         this.border.setSize(n, n2);
     }
