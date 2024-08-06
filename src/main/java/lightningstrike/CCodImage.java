@@ -87,11 +87,11 @@ public class CCodImage extends Constants
         this.m_pDocAnother = pDocAnother;
         this.imageType = 0;
         this.comments = new byte[4096];
-        this.compressionType = 1;
-        this.encoderType = 1;
-        this.SCB = 1;
-        this.quantizerType = 1;
-        this.colorTType = 1;
+        this.compressionType = Constants.BI_WAVELET; // The only reason to select this is the order in Constants.java ....
+        this.encoderType = Constants.ARITHMETIC;
+        this.SCB = Constants.SISD; // The only reason to select this is the order in Constants.java ....
+        this.quantizerType = Constants.TABLE_QUANTIZATION;
+        this.colorTType = Constants.YIQ_RGB;
         this.fileBuf = null;
         this.codedSize = 0;
         this.waveletLevels = 5;
@@ -104,11 +104,11 @@ public class CCodImage extends Constants
         this.imageType = 0;
         this.oneStrike = oneStrike;
         this.comments = new byte[4096];
-        this.compressionType = 1;
-        this.encoderType = 1;
-        this.SCB = 1;
-        this.quantizerType = 1;
-        this.colorTType = 1;
+        this.compressionType = Constants.BI_WAVELET;
+        this.encoderType = Constants.ARITHMETIC;
+        this.SCB = Constants.SISD; // The only reason to select this is the order in Constants.java ....
+        this.quantizerType = Constants.TABLE_QUANTIZATION;
+        this.colorTType = Constants.YIQ_RGB;
         this.fileBuf = null;
         this.codedSize = 0;
         this.waveletLevels = 5;
@@ -142,21 +142,21 @@ public class CCodImage extends Constants
             return false;
         }
         this.encoderType = Constants.READONEBYTE(inputStream);
-        if (this.encoderType == 2) {
+        if (this.encoderType == Constants.ARITHMETIC_LOSSLESS) {
             this.errorDialog = new ErrorMessage(this.oneStrike, new String("This version can not decompress Loss-Less compressed image"));
             this.errorDialog.setVisible(true);
             return false;
         }
         this.compressionType = Constants.READONEBYTE(inputStream);
-        if (this.compressionType != 1) {
+        if (this.compressionType != Constants.BI_WAVELET) {
             return false;
         }
         this.quantizerType = Constants.READONEBYTE(inputStream);
-        if (this.quantizerType != 1) {
+        if (this.quantizerType != Constants.TABLE_QUANTIZATION) {
             return false;
         }
         this.SCB = Constants.READONEBYTE(inputStream);
-        if (this.SCB != 1) {
+        if (this.SCB != Constants.SISD) { // Sparse Inverse Spectral Decomposition(?)
             return false;
         }
         this.colorTType = Constants.READONEBYTE(inputStream);
