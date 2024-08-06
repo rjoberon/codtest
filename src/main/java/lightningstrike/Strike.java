@@ -345,7 +345,8 @@ public class Strike extends Frame implements ActionListener, WindowListener
                     this.oneCodImage.Generate(this, this.tempFile, this.tempFileAnother, concat);
                 }
                 if (this.oneCodImage.StartGenerateImage()) {
-                    for (short getLevels = this.oneCodImage.GetLevels(), n = 0; n < getLevels + 1; ++n) {
+                    short getLevels = this.oneCodImage.GetLevels();
+                    for (short n = 0; n < getLevels + 1; ++n) {
                         if (n != getLevels) {
                             this.gauge.setFillPercent(n / (double)getLevels * 100.0);
                             this.gauge.fill();
@@ -410,7 +411,8 @@ public class Strike extends Frame implements ActionListener, WindowListener
                 this.oneCodImage.Generate(this, this.tempFile, this.tempFileAnother, s);
             }
             if (this.oneCodImage.StartGenerateImage()) {
-                for (short getLevels = this.oneCodImage.GetLevels(), n = 0; n < getLevels + 1; ++n) {
+                short getLevels = this.oneCodImage.GetLevels();
+                for (short n = 0; n < getLevels + 1; ++n) {
                     if (n != getLevels) {
                         this.gauge.setFillPercent(n / (double)getLevels * 100.0);
                         this.gauge.fill();
