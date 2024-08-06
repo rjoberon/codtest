@@ -41,15 +41,15 @@ public class CCode
 
 
     public CCode() {
-        this.no_of_chars = 1024;
-        this.no_of_symbols = this.no_of_chars + 1;
-        this.eOF_symbol = this.no_of_symbols;
+        this.no_of_chars = CCode.No_of_chars;
+        this.no_of_symbols = CCode.No_of_symbols;
+        this.eOF_symbol = CCode.EOF_symbol;
         this.max_frequency = 8192;
         this.model_delta = 10;
-        this.char_to_index = new int[1024];
-        this.index_to_char = new byte[1026];
-        this.freq = new int[1026];
-        this.cum_freq = new int[1026];
+        this.char_to_index = new int[CCode.No_of_chars];
+        this.index_to_char = new byte[CCode.No_of_symbols+1];
+        this.freq = new int[CCode.No_of_symbols+1];
+        this.cum_freq = new int[CCode.No_of_symbols+1];
     }
     
     public void Init(final int no_of_chars) {
