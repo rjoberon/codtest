@@ -64,18 +64,19 @@ public class CCode
         this.eOF_symbol = this.no_of_symbols;
     }
     
-    public int Decode(final byte[] iBuf, final int iBufIndex, final byte[] oBuf, final int n) {
+    // The name of the final parameter was taken from the call to the Init method
+     public int Decode(final byte[] iBuf, final int iBufIndex, final byte[] oBuf, final int no_of_chars) {
         this.iBuf = iBuf;
         this.oBuf = oBuf;
         this.iBufIndex = iBufIndex;
         this.oBufIndex = 0;
-        this.Init(n);
+        this.Init(no_of_chars);
         int n2;
-        if (n % 2 == 0) {
-            n2 = n / 2 - 1;
+        if (no_of_chars % 2 == 0) {
+            n2 = no_of_chars / 2 - 1;
         }
         else {
-            n2 = n / 2;
+            n2 = no_of_chars / 2;
         }
         this.StartModel();
         this.StartInputingBits();
@@ -188,33 +189,36 @@ public class CCode
         this.freq[0] = 0;
     }
     
-    public void UpdateModel(final int n) {
+    //the name of the parameter could be guessed by the use in the Decode method
+    public void UpdateModel(final int decoded_symbol_index) {
         if (this.cum_freq[0] >= this.max_frequency) {
-            int n2 = 0;
+            int rescaled_cum_freq = 0;
             for (int i = this.no_of_symbols; i >= 0; --i) {
                 this.freq[i] = (this.freq[i] + 1) / 2;
-                this.cum_freq[i] = n2;
-                n2 += this.freq[i];
+                this.cum_freq[i] = rescaled_cum_freq;
+                rescaled_cum_freq += this.freq[i];
             }
         }
-        int j;
-        for (j = n; this.freq[j] == this.freq[j - 1]; --j) {}
-        if (j < n) {
-            final byte b = this.index_to_char[j];
-            final byte b2 = this.index_to_char[n];
-            this.index_to_char[j] = b2;
-            this.index_to_char[n] = b;
-            this.char_to_index[b] = n;
-            this.char_to_index[b2] = j;
+
+        //Find the next symbol with a lower index and a different frequency
+        int next_higher_freq_symbol_index;
+        for (next_higher_freq_symbol_index = decoded_symbol_index; this.freq[next_higher_freq_symbol_index] == this.freq[next_higher_freq_symbol_index - 1]; --next_higher_freq_symbol_index) {}
+        if (next_higher_freq_symbol_index < decoded_symbol_index) {
+            final byte lower_rank_symbol_char = this.index_to_char[next_higher_freq_symbol_index];
+            final byte decoded_symbol_char = this.index_to_char[decoded_symbol_index];
+            this.index_to_char[next_higher_freq_symbol_index] = decoded_symbol_char;
+            this.index_to_char[decoded_symbol_index] = lower_rank_symbol_char;
+            this.char_to_index[lower_rank_symbol_char] = decoded_symbol_index;
+            this.char_to_index[decoded_symbol_char] = next_higher_freq_symbol_index;
         }
-        final int[] freq = this.freq;
-        final int n3 = j;
-        freq[n3] += this.model_delta;
-        while (j > 0) {
-            --j;
-            final int[] cum_freq = this.cum_freq;
-            final int n4 = j;
-            cum_freq[n4] += this.model_delta;
+
+        final int new_decoded_symbol_index = next_higher_freq_symbol_index;
+
+        this.freq[new_decoded_symbol_index] += this.model_delta;
+
+        //update the cum_freq of the remaining symbols
+        for(int i = new_decoded_symbol_index -1; i >= 0; --i) {
+            this.cum_freq[i] += this.model_delta;
         }
     }
 }
