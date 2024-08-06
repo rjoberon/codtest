@@ -1,4 +1,6 @@
-import java.awt.image.ImageProducer;
+package internal.lightningstrike.applet;
+
+//import java.awt.image.ImageProducer;
 import java.awt.image.MemoryImageSource;
 import java.awt.Toolkit;
 import java.awt.Dimension;
@@ -77,7 +79,8 @@ public class CCodImage extends Constants
             this.yiqQ = new CYIQ();
         }
         catch (final Throwable t) {
-            (this.errorDialog = new ErrorMessage(this.oneStrike, new String("No enough memory"))).show();
+            this.errorDialog = new ErrorMessage(this.oneStrike, new String("No enough memory"));
+            this.errorDialog.setVisible(true);
         }
         this.fileName = fileName;
         this.m_pDoc = pDoc;
@@ -116,7 +119,8 @@ public class CCodImage extends Constants
             return false;
         }
         if (this.title[3] != 51 || this.title[5] != 48) {
-            (this.errorDialog = new ErrorMessage(this.oneStrike, new String("Version incompatible !"))).show();
+            this.errorDialog = new ErrorMessage(this.oneStrike, new String("Version incompatible !"));
+            this.errorDialog.setVisible(true);
             return false;
         }
         this.headerSize = Constants.READWORD(inputStream);

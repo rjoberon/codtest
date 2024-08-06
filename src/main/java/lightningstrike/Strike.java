@@ -1,3 +1,5 @@
+package internal.lightningstrike.applet;
+
 import java.awt.Rectangle;
 import java.io.FileInputStream;
 import java.awt.Event;
@@ -18,11 +20,19 @@ import java.awt.MenuItem;
 import java.awt.FileDialog;
 import java.awt.Frame;
 
+
+import java.awt.event.WindowListener;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.ActionEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+
 // 
 // Decompiled by Procyon v0.6.0
 // 
 
-public class Strike extends Frame
+public class Strike extends Frame implements ActionListener, WindowListener
 {
     ImageCanvas imageArea;
     private Lightning parent;
@@ -76,7 +86,13 @@ public class Strike extends Frame
     public Bargauge gauge;
     
     public Strike() {
-        super("Lightning Strike Image Gallery 1.1 - Oct. 1996");
+       super("Lightning Strike Image Gallery 1.1 - Oct. 1996");
+
+        // Constructor code...
+        this.addWindowListener(this);
+        // Add ActionListeners to menu items
+ 
+
         this.progressiveDisplay = false;
         this.isDecompressing = false;
         this.interuptNow = false;
@@ -90,14 +106,14 @@ public class Strike extends Frame
         this.Width = 450;
         this.Height = 450;
         this.firstTime = true;
-        this.move(this.X, this.Y);
-        this.resize(this.Width, this.Height);
-        this.show();
+        this.setSize(this.Width, this.Height);
+        this.setVisible(true);
     }
     
     public Strike(final Lightning parent, final String fullDirName, final String[] fileList) {
         super("Lightning Strike Image Gallery 1.1 - Oct. 1996");
-        this.progressiveDisplay = false;
+        // Constructor code...
+        this.addWindowListener(this);
         this.isDecompressing = false;
         this.interuptNow = false;
         this.setBackground(Color.gray);
@@ -112,16 +128,15 @@ public class Strike extends Frame
         this.Y = 150;
         this.Width = 450;
         this.Height = 450;
-        this.firstTime = true;
-        this.move(this.X, this.Y);
-        this.resize(this.Width, this.Height);
-        this.show();
+        this.setLocation(this.X, this.Y);
+        this.setSize(this.Width, this.Height);
+        this.setVisible(true);
     }
     
     public void reShow() {
-        this.move(this.X, this.Y);
-        this.resize(this.Width, this.Height);
-        this.show();
+        this.setLocation(this.X, this.Y);
+        this.setSize(this.Width, this.Height);
+        this.setVisible(true);
     }
     
     private void CreateMenus() {
@@ -129,27 +144,38 @@ public class Strike extends Frame
         final Menu m = new Menu("File", false);
         if (!this.isApplet) {
             m.add(this.openMenuItem = new MenuItem("Open"));
+            this.openMenuItem.addActionListener(this);
         }
         else {
             this.openMenuItem = null;
         }
         m.add(this.propertyMenuItem = new MenuItem("Properties"));
+        this.propertyMenuItem.addActionListener(this);
         m.addSeparator();
         m.add(this.exitMenuItem = new MenuItem("Exit"));
+        this.exitMenuItem.addActionListener(this);
         menuBar.add(m);
         final Menu i = new Menu("Display");
         i.add(this.refreshMenuItem = new MenuItem("Refresh"));
+        this.refreshMenuItem.addActionListener(this);
+
         i.addSeparator();
         i.add(this.stretchUpMenuItem = new MenuItem("Zoom In (max 3096 pix.)"));
+        this.stretchUpMenuItem.addActionListener(this);
         i.add(this.stretchDownMenuItem = new MenuItem("Zoom Out"));
+        this.stretchDownMenuItem.addActionListener(this);
         i.addSeparator();
         i.add(this.normalMenuItem = new MenuItem("Normal"));
+        this.normalMenuItem.addActionListener(this);
         i.addSeparator();
         i.add(this.doubleSizeMenuItem = new MenuItem("Double Size (max 3096 pix.)"));
+        this.doubleSizeMenuItem.addActionListener(this);
         i.add(this.halfSizeMenuItem = new MenuItem("Half Size"));
+        this.halfSizeMenuItem.addActionListener(this);
         menuBar.add(i);
         final Menu j = new Menu("About");
         j.add(this.aboutMenuItem = new MenuItem("About Lightning Strike"));
+        this.aboutMenuItem.addActionListener(this);
         menuBar.add(j);
         this.setMenuBar(menuBar);
     }
@@ -168,12 +194,22 @@ public class Strike extends Frame
             this.add("South", comp);
             comp.add("North", this.gauge);
             comp.add("Center", this.select = new winSelector(3, this.fileList));
+            this.select.addItemListener(new ItemListener() {
+                @Override
+                public void itemStateChanged(ItemEvent e) {
+                    if (!isDecompressing) {
+                        String str = fullDirName + select.getSelectedItem();
+                        System.out.println("Select = " + str);
+                        openRemoteFile(str);
+                    }
+                }
+            });
         }
         else {
             this.add("South", this.gauge);
             this.select = null;
         }
-        this.show();
+        this.setVisible(true);
         this.gauge.setFillPercent(0.0);
         this.gauge.fill();
     }
@@ -181,162 +217,117 @@ public class Strike extends Frame
     private void CreateDialogs() {
     }
     
-    public boolean handleEvent(final Event event) {
-        switch (event.id) {
-            case 201: {
-                if (!this.isDecompressing) {
-                    if (this.isApplet) {
-                        this.parent.displayNow = false;
-                    }
-                    this.hide();
-                    this.dispose();
-                    if (!this.isApplet) {
-                        System.exit(0);
-                    }
-                }
-                return false;
+ 
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        Object source = e.getSource();
+        if (source == this.openMenuItem) {
+            this.propertyMenuItem.setEnabled(false);
+            this.aboutMenuItem.setEnabled(false);
+            this.exitMenuItem.setEnabled(false);
+            this.memoryImage = null;
+            if (!this.isApplet) {
+                this.openFile();
             }
-            case 1001: {
-                if (event.target instanceof MenuItem) {
-                    if (event.target == this.openMenuItem) {
-                        this.propertyMenuItem.disable();
-                        this.aboutMenuItem.disable();
-                        this.exitMenuItem.disable();
-                        this.memoryImage = null;
-                        if (!this.isApplet) {
-                            this.openFile();
-                        }
-                        this.propertyMenuItem.enable();
-                        this.aboutMenuItem.enable();
-                        this.exitMenuItem.enable();
-                    }
-                    else {
-                        if (event.target == this.propertyMenuItem && !this.isDecompressing && this.memoryImage != null) {
-                            if (this.myDialog == null) {
-                                if (this.oneCodImage != null) {
-                                    this.imageProperties = this.oneCodImage.getProperties();
-                                    (this.myDialog = new propertyDialog(this, new String("Decompressed Image Properties"), this.imageProperties.fileName, this.imageProperties.fileSize, this.imageProperties.color, this.imageProperties.width, this.imageProperties.height, this.imageProperties.decompressTime)).show();
-                                }
-                            }
-                            else if (this.myDialog.displayNow) {
-                                this.myDialog.toFront();
-                            }
-                            else {
-                                this.myDialog = null;
-                                this.imageProperties = this.oneCodImage.getProperties();
-                                (this.myDialog = new propertyDialog(this, new String("Decompressed Image Properties"), this.imageProperties.fileName, this.imageProperties.fileSize, this.imageProperties.color, this.imageProperties.width, this.imageProperties.height, this.imageProperties.decompressTime)).show();
-                            }
-                            return true;
-                        }
-                        if (event.target == this.exitMenuItem) {
-                            if (!this.isDecompressing) {
-                                if (this.isApplet) {
-                                    this.parent.displayNow = false;
-                                }
-                                this.hide();
-                                this.dispose();
-                                if (!this.isApplet) {
-                                    System.exit(0);
-                                }
-                            }
-                            return false;
-                        }
-                        if (event.target == this.stretchUpMenuItem) {
-                            if (this.displayWidth != 0 && this.displayHeight != 0 && this.displayWidth + (int)(0.1 * this.displayWidth) <= 3096 && this.displayHeight + (int)(0.1 * this.displayHeight) <= 3096) {
-                                this.displayWidth += (int)(0.1 * this.displayWidth);
-                                this.displayHeight += (int)(0.1 * this.displayHeight);
-                                this.imageArea.repaint();
-                            }
-                            return true;
-                        }
-                        if (event.target == this.stretchDownMenuItem) {
-                            if (this.displayWidth != 0 && this.displayHeight != 0) {
-                                this.displayWidth -= (int)(0.1 * this.displayWidth);
-                                this.displayHeight -= (int)(0.1 * this.displayHeight);
-                                if (this.displayWidth <= 0) {
-                                    this.displayWidth = 1;
-                                }
-                                if (this.displayHeight <= 0) {
-                                    this.displayHeight = 1;
-                                }
-                                this.imageArea.repaint();
-                            }
-                            return true;
-                        }
-                        if (event.target == this.refreshMenuItem) {
-                            this.imageArea.repaint();
-                            return true;
-                        }
-                        if (event.target == this.normalMenuItem) {
-                            if (this.imageSize != null) {
-                                this.displayWidth = this.imageSize.width;
-                                this.displayHeight = this.imageSize.height;
-                                this.imageArea.repaint();
-                            }
-                            else {
-                                this.displayWidth = 0;
-                                this.displayHeight = 0;
-                            }
-                            return true;
-                        }
-                        if (event.target == this.doubleSizeMenuItem) {
-                            if (this.displayWidth != 0 && this.displayHeight != 0 && 2 * this.displayWidth <= 3096 && 2 * this.displayHeight <= 3096) {
-                                this.displayWidth *= 2;
-                                this.displayHeight *= 2;
-                                this.imageArea.repaint();
-                            }
-                            return true;
-                        }
-                        if (event.target == this.halfSizeMenuItem) {
-                            if (this.displayWidth != 0 && this.displayHeight != 0) {
-                                this.displayWidth *= (int)0.5;
-                                this.displayHeight *= (int)0.5;
-                                this.imageArea.repaint();
-                            }
-                            return true;
-                        }
-                        if (event.target == this.byteStreamMenuItem) {
-                            if (this.progressiveDisplay) {
-                                this.progressiveDisplay = false;
-                            }
-                            else {
-                                this.progressiveDisplay = true;
-                            }
-                            return true;
-                        }
-                        if (event.target == this.aboutMenuItem) {
-                            if (this.aboutDialog == null) {
-                                (this.aboutDialog = new AboutDialog(this)).show();
-                            }
-                            else if (this.aboutDialog.displayNow) {
-                                this.aboutDialog.toFront();
-                            }
-                            else {
-                                (this.aboutDialog = new AboutDialog(this)).show();
-                            }
-                            return true;
-                        }
-                    }
+            this.propertyMenuItem.setEnabled(true);
+            this.aboutMenuItem.setEnabled(true);
+            this.exitMenuItem.setEnabled(true);
+        } else if (source == this.propertyMenuItem && !this.isDecompressing && this.memoryImage != null) {
+            if (this.myDialog == null) {
+                if (this.oneCodImage != null) {
+                    this.imageProperties = this.oneCodImage.getProperties();
+                    this.myDialog = new propertyDialog(this, "Decompressed Image Properties", this.imageProperties.fileName, this.imageProperties.fileSize, this.imageProperties.color, this.imageProperties.width, this.imageProperties.height, this.imageProperties.decompressTime);
+                    this.myDialog.setVisible(true);
                 }
-                else if (event.target == this.select && !this.isDecompressing) {
-                    final String str = new String(this.fullDirName + this.select.getSelectedItem());
-                    System.out.println("Select = " + str);
-                    this.openRemoteFile(str);
-                }
-                return true;
+            } else if (this.myDialog.isVisible()) {
+                this.myDialog.toFront();
             }
-            case 403: {
-                if (event.key == 1010) {
-                    new DesignDialog(this, "Designed by Dehua KANG, June 1996").show();
-                }
-                return true;
+        } else if (source == this.exitMenuItem) {
+            if (!this.isDecompressing) {
+                this.setVisible(false);
+                this.dispose();
+                System.exit(0);
             }
-            default: {
-                return false;
+        } else if (source == this.stretchUpMenuItem) {
+            if (this.displayWidth != 0 && this.displayHeight != 0 && this.displayWidth + (int)(0.1 * this.displayWidth) <= 3096 && this.displayHeight + (int)(0.1 * this.displayHeight) <= 3096) {
+                this.displayWidth += (int)(0.1 * this.displayWidth);
+                this.displayHeight += (int)(0.1 * this.displayHeight);
+                this.imageArea.repaint();
+            }
+        } else if (source == this.stretchDownMenuItem) {
+            if (this.displayWidth != 0 && this.displayHeight != 0) {
+                this.displayWidth -= (int)(0.1 * this.displayWidth);
+                this.displayHeight -= (int)(0.1 * this.displayHeight);
+                if (this.displayWidth <= 0) {
+                    this.displayWidth = 1;
+                }
+                if (this.displayHeight <= 0) {
+                    this.displayHeight = 1;
+                }
+                this.imageArea.repaint();
+            }
+        } else if (source == this.refreshMenuItem) {
+            this.imageArea.repaint();
+        } else if (source == this.doubleSizeMenuItem) {
+            if (this.displayWidth != 0 && this.displayHeight != 0 && 2 * this.displayWidth <= 3096 && 2 * this.displayHeight <= 3096) {
+                this.displayWidth *= 2;
+                this.displayHeight *= 2;
+                this.imageArea.repaint();
+            }
+        } else if (source == this.halfSizeMenuItem) {
+            if (this.displayWidth != 0 && this.displayHeight != 0) {
+                this.displayWidth *= 0.5;
+                this.displayHeight *= 0.5;
+                this.imageArea.repaint();
+            }
+        } else if (source == this.byteStreamMenuItem) {
+            this.progressiveDisplay = !this.progressiveDisplay;
+        } else if (source == this.aboutMenuItem) {
+            if (this.aboutDialog == null) {
+                this.aboutDialog = new AboutDialog(this);
+                this.aboutDialog.setVisible(true);
+            } else if (this.aboutDialog.displayNow) {
+                this.aboutDialog.toFront();
+            } else {
+                this.aboutDialog = new AboutDialog(this);
+                this.aboutDialog.setVisible(true);
+            }
+        }
+    }        
+
+
+
+    @Override
+    public void windowClosing(WindowEvent e) {
+        if (!this.isDecompressing) {
+            if (this.isApplet) {
+                this.parent.displayNow = false;
+            }
+            this.setVisible(false);
+            this.dispose();
+            if (!this.isApplet) {
+                System.exit(0);
             }
         }
     }
-    
+
+
+    // Implement other WindowListener methods with empty bodies
+    @Override
+    public void windowOpened(WindowEvent e) {}
+    @Override
+    public void windowClosed(WindowEvent e) {}
+    @Override
+    public void windowIconified(WindowEvent e) {}
+    @Override
+    public void windowDeiconified(WindowEvent e) {}
+    @Override
+    public void windowActivated(WindowEvent e) {}
+    @Override
+    public void windowDeactivated(WindowEvent e) {}
+
+
     private void openFile() {
         this.openDialog = null;
         (this.openDialog = new FileDialog(this, "Open File")).setFile(new String("*.cod"));

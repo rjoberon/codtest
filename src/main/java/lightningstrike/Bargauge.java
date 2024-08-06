@@ -1,7 +1,8 @@
+package internal.lightningstrike.applet;
+
 import java.awt.Rectangle;
 import java.awt.Graphics;
 import java.awt.Dimension;
-import java.awt.Component;
 import java.awt.Color;
 import java.awt.Canvas;
 
@@ -29,12 +30,12 @@ public class Bargauge extends Canvas
     }
     
     public void resize(final int n, final int n2) {
-        this.reshape(this.location().x, this.location().y, n, n2);
+        this.reshape(this.getLocation().x, this.getLocation().y, n, n2);
     }
     
     public void reshape(final int x, final int y, final int n, final int n2) {
-        super.reshape(x, y, n, n2);
-        this.border.resize(n, n2);
+        super.setBounds(x, y, n, n2);
+        this.border.setSize(n, n2);
     }
     
     public Dimension minimumSize() {
@@ -75,7 +76,7 @@ public class Bargauge extends Canvas
     }
     
     protected String paramString() {
-        final Dimension size = this.size();
+        final Dimension size = this.getSize();
         return "fill percent=" + this.percentFill + "," + "orientation=" + ((size.width > size.height) ? Orientation.HORIZONTAL : Orientation.VERTICAL) + "," + "color" + this.fillColor;
     }
 }
