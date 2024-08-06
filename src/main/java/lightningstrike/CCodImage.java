@@ -115,9 +115,11 @@ public class CCodImage extends Constants
     }
     
     public boolean ReadFile(final InputStream inputStream, final InputStream inputStream2) {
+    	/* beginning of file: "CIS" + version number ("2.5" or "3.0") */
         if (!Constants.READBYTES(inputStream, this.title, 8)) {
             return false;
         }
+        /* check version number "3.0" */
         if (this.title[3] != 51 || this.title[5] != 48) {
             this.errorDialog = new ErrorMessage(this.oneStrike, new String("Version incompatible !"));
             this.errorDialog.setVisible(true);
