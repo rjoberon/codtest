@@ -53,6 +53,10 @@ public class CCode
     }
     
     public void Init(final int no_of_chars) {
+
+        //Print out the number of characters used in this encoding
+        System.out.println("Number of characters: " + no_of_chars);
+
         if (no_of_chars == 1) {
             this.max_frequency = 8192;
             this.model_delta = 1000;
@@ -92,6 +96,7 @@ public class CCode
                 //How would that be handled?
                 break;
             }
+            //Why is this substraction needed? does this have anything to do with the possible negative values in the index_to_char array?
             this.oBuf[this.oBufIndex] = (byte)(this.index_to_char[decodeSymbol] - n2);
             ++this.oBufIndex;
             this.UpdateModel(decodeSymbol);
@@ -215,6 +220,11 @@ public class CCode
     public void StartModel() {
         for (int i = 0; i < this.no_of_chars; ++i) {
             this.char_to_index[i] = i + 1;
+            // if i is larger than 126, the value that is stored in the index_to_char array will be "negative"
+            // (the value would be interpreted negative, even if the byte contains the same bit pattern as the 8 LSB of i)
+
+            // if no_of_chars is larger than 255, it will also mean that the values of index_to_char will be truncated to the 8 LSB
+            // and thus for i > 255, this.char_to_index[this.index_to_char[i]] != i
             this.index_to_char[i + 1] = (byte)i;
         }
         for (int j = 0; j <= this.no_of_symbols; ++j) {
