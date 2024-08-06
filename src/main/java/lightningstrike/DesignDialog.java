@@ -1,3 +1,5 @@
+package lightningstrike;
+
 import java.awt.Event;
 import java.awt.Rectangle;
 import java.awt.LayoutManager;

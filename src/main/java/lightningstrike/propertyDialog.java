@@ -1,4 +1,4 @@
-package internal.lightningstrike.applet;
+package lightningstrike;
 import java.awt.*;
 import java.awt.event.*;
 

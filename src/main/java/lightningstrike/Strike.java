@@ -1,4 +1,4 @@
-package internal.lightningstrike.applet;
+package lightningstrike;
 
 import java.awt.Rectangle;
 import java.io.FileInputStream;

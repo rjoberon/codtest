@@ -1,4 +1,4 @@
-package internal.lightningstrike.applet;
+package lightningstrike;
 
 //import java.awt.image.ImageProducer;
 import java.awt.image.MemoryImageSource;

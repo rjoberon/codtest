@@ -1,3 +1,5 @@
+package lightningstrike;
+
 import java.io.InputStream;
 
 // 
