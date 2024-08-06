@@ -8,13 +8,14 @@ public class CCode
 {
     static final int Code_value_bits = 16;
     static final int Top_value = 65535;
-    static final int First_qtr = 16384;
-    static final int Half = 32768;
-    static final int Third_qtr = 49152;
+    static final int First_qtr = (Top_value/4) + 1;
+    static final int Half = (2 * First_qtr);
+    static final int Third_qtr = 3 * First_qtr;
     static final int No_of_chars = 1024;
-    static final int EOF_symbol = 1025;
-    static final int No_of_symbols = 1025;
+    static final int No_of_symbols = No_of_chars + 1;
+    static final int EOF_symbol = No_of_chars +1;
     static final int DECODE_ERR = -9999;
+
     public byte[] iBuf;
     public byte[] oBuf;
     public int no_of_chars;
@@ -156,22 +157,11 @@ public class CCode
         final int range = this.high - this.low + 1;
         final int scaled_value = ((this.value - this.low + 1) * total_cum_freq - 1) / range;
 
-//        // i was initially "n"
-//        // current_symbol_index was "n4"
-//        // current_cum_freq was "array"
-        // int i = 1;
-        // int current_symbol_index = 1;
-        // while (current_cum_freq[i++] > n3) {
-        //     ++current_symbol_index;
-        // }
-// The folowing code should be equivalent to the above commented code
+        //Find the symbol that corresponds to the scaled value
+        int current_symbol_index = 0;
+        for (current_symbol_index = 1; current_cum_freq[current_symbol_index] > scaled_value; current_symbol_index++) {}
 
-        int current_symbol_index = 1;
-        for (int i = 1; current_cum_freq[i] > scaled_value; i++) {
-            ++current_symbol_index;
-        }
-
-
+        //We are done if the symbol is the EOF symbol
         if (current_symbol_index == this.eOF_symbol) {
             return current_symbol_index;
         }
@@ -185,36 +175,32 @@ public class CCode
         //Mapping E_2(x) = 2(x - 0.5)
         //Mapping E_3(x) = 2(x - 0.25)
         while (true) {
-             if (this.high >= CCode.Half) {
-                if (this.low >= CCode.Half) {
-                    // The interval is entirely confined to the upper half of the unit interval
-                    // use E_2 mapping
-                    this.value -= CCode.Half;
-                    this.low -= CCode.Half;
-                    this.high -= CCode.Half;
-                } else {
-                    if (this.low < CCode.First_qtr || this.high >= CCode.Third_qtr) {
-                        // low must be smaller than half, and high larger than half
-                        // this means that if either of the above conditions hold, the interval is at least half the size of the unit interval
-                        // the next symbol can be decoded
-                        break;
-                    } else {
-                        // Then interval is confined to the central half of the unit interval
-                        // use E_3 mapping
-                        this.value -= CCode.First_qtr;
-                        this.low -= CCode.First_qtr;
-                        this.high -= CCode.First_qtr;
-                    }
-                }
-            } else {
+            if (this.high < CCode.Half) {
                 // The interval is entirely confined to the lower half of the unit interval
                 // use E_1 mapping
+                //Do nothing else
+            } else if (this.low >= CCode.Half) {
+                // The interval is entirely confined to the upper half of the unit interval
+                // use E_2 mapping
+                this.value -= CCode.Half;
+                this.low -= CCode.Half;
+                this.high -= CCode.Half;
+            } else if (this.low >= CCode.First_qtr && this.high < CCode.Third_qtr) {
+                // Then interval is confined to the central half of the unit interval
+                // use E_3 mapping
+                this.value -= CCode.First_qtr;
+                this.low -= CCode.First_qtr;
+                this.high -= CCode.First_qtr;
+            } else {
+                // low must be smaller than half, and high larger than half
+                // this means that if either of the above conditions hold, the interval is at least half the size of the unit interval
+                // the next symbol can be decoded
+                break;
             }
 
             //Apply rest of mapping
-            this.low *= 2;
-            this.high *= 2;
-            this.high += 1;
+            this.low = 2 * this.low;
+            this.high = 2* this.high + 1;
 
             //Integrate a new bit into the value
             final int next_bit = InputBit();
@@ -222,8 +208,7 @@ public class CCode
                 //Due to the IGNORE_GARBAGE method, this should never happen
                 return CCode.DECODE_ERR;
             }
-            this.value *= 2;
-            this.value += (next_bit != 0) ? 1 : 0; //Make sure that next_bit really is only 1 or 0
+            this.value = 2 * this.value + (next_bit & 0x1);
         }
         return current_symbol_index;
     }
@@ -251,9 +236,11 @@ public class CCode
             }
         }
 
-        //Find the next symbol with a lower index and a different frequency
+        //Find the next symbol with a higher frequency
         int next_higher_freq_symbol_index;
         for (next_higher_freq_symbol_index = decoded_symbol_index; this.freq[next_higher_freq_symbol_index] == this.freq[next_higher_freq_symbol_index - 1]; --next_higher_freq_symbol_index) {}
+
+        //Swap the decoded symbol with the next higher frequency symbol
         if (next_higher_freq_symbol_index < decoded_symbol_index) {
             final byte higher_freq_symbol_char = this.index_to_char[next_higher_freq_symbol_index];
             final byte decoded_symbol_char = this.index_to_char[decoded_symbol_index];
