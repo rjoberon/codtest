@@ -214,8 +214,8 @@ public class Strike extends Frame implements ActionListener, WindowListener
         this.gauge.fill();
     }
     
-    private void CreateDialogs() {
-    }
+//    private void CreateDialogs() {
+//   }
     
  
 
@@ -331,7 +331,7 @@ public class Strike extends Frame implements ActionListener, WindowListener
     private void openFile() {
         this.openDialog = null;
         (this.openDialog = new FileDialog(this, "Open File")).setFile(new String("*.cod"));
-        this.openDialog.show();
+        this.openDialog.setVisible(true);
         final String file = this.openDialog.getFile();
         if (file != null) {
             final String concat = this.openDialog.getDirectory().concat(file);
@@ -382,11 +382,15 @@ public class Strike extends Frame implements ActionListener, WindowListener
                 this.gauge.fill();
             }
             catch (final Throwable t) {
+                // print the contents of the Throwable in a readable manner on the console
+                t.printStackTrace();
+
                 this.isDecompressing = false;
-                (this.errorDialog = new ErrorMessage(this, new String("open and read cod file error ! mainly because of memory and swap space !"))).show();
+                this.errorDialog = new ErrorMessage(this, new String("open and read cod file error ! mainly because of memory and swap space !"));
+                this.errorDialog.setVisible(true);
             }
         }
-        this.openDialog.hide();
+        this.openDialog.setVisible(false);
         this.openDialog.dispose();
         this.isDecompressing = false;
     }
@@ -423,7 +427,7 @@ public class Strike extends Frame implements ActionListener, WindowListener
                         this.imageSize = this.oneCodImage.getImageSize();
                         this.displayWidth = this.imageSize.width;
                         this.displayHeight = this.imageSize.height;
-                        final Rectangle bounds = this.imageArea.bounds();
+                        final Rectangle bounds = this.imageArea.getBounds();
                         this.Width += this.imageSize.width - bounds.width;
                         this.Height += this.imageSize.height - bounds.height;
                         if (this.Width <= 100) {
@@ -445,7 +449,8 @@ public class Strike extends Frame implements ActionListener, WindowListener
         }
         catch (final Throwable t) {
             this.isDecompressing = false;
-            (this.errorDialog = new ErrorMessage(this, new String("open and read cod file error ! mainly because of memory and swap space !"))).show();
+            this.errorDialog = new ErrorMessage(this, new String("open and read cod file error ! mainly because of memory and swap space !"));
+            this.errorDialog.setVisible(true);
             this.isDecompressing = false;
         }
         this.isDecompressing = false;
