@@ -15,7 +15,7 @@ class winSelector extends List
         this.setFont(new Font("TimesRoman", 0, 12));
         this.setBackground(Color.lightGray);
         for (int i = 0; i < array.length; ++i) {
-            this.addItem(array[i]);
+            this.add(array[i]);
         }
     }
 }
