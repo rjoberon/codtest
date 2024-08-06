@@ -113,7 +113,7 @@ public class CCode
                 // the returned bits in this case are "arbitrary" and in our case will be set to 1
                 // (since EOF was -1, and thus the lower bits = 0xFF)
                 this.buffer = 255;
-                ++this.garbage_bits;
+                ++this.garbage_bits; //Should this not be this.garbage_bits += 8?
                 if (this.garbage_bits > (CCode.Code_value_bits - 2)) {
                     return CCode.DECODE_ERR;
                 }
