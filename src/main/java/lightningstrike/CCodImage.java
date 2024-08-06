@@ -204,34 +204,49 @@ public class CCodImage extends Constants
         this.height = (short)(this.imageHeight + (n - this.imageHeight % n) % n);
     }
     
-    private void YiqToRgb(final short n, final short[] array, final short[] array2, final short[] array3, final int[] array4, final short n2, final short n3) {
-        int n4 = 0;
-        if (this.colorType == 1) {
-            for (short n5 = (short)(n3 - 1); n5 >= 0; --n5) {
-                for (short n6 = 0; n6 < n2; ++n6) {
-                    final int n7 = (array[n4] >> n) + this.mean;
-                    final int n8 = array3[n4] >> n;
-                    final int n9 = array2[n4] >> n;
-                    final int n10 = (n9 * 979 + n8 * 636 >> 10) + n7;
-                    final int n11 = (n9 * -279 + n8 * -662 >> 10) + n7;
-                    final int n12 = (n9 * -1133 + n8 * 1744 >> 10) + n7;
-                    array4[n5 * n2 + n6] = (0xFF000000 | ((n10 < 0) ? 0 : ((n10 > 255) ? 255 : n10)) << 16 | ((n11 < 0) ? 0 : ((n11 > 255) ? 255 : n11)) << 8 | ((n12 < 0) ? 0 : ((n12 > 255) ? 255 : n12)));
-                    ++n4;
+    //this.YiqToRgb(n2, this.yiqY.yiqP, this.yiqI.yiqP, this.yiqQ.yiqP, this.rgbData, this.currentWidth, this.currentHeight);
+    private void YiqToRgb(final short n, final short[] yiq_y_power_data, final short[] yiq_i_power_data, final short[] yiq_q_power_data, final int[] rgb_image_data, final short image_width, final short image_height) {
+        // The addition of the line offset means that the yiq data is stored in a row major order
+        // (as are most graphics formats if memory serves)
+        final int yiq_data_line_offset = this.width - image_width;
+        if (this.colorType == Constants.COLOR_IMAGE) {
+            int yiq_data_idx = 0;
+            for (short image_pos_y = (short)(image_height - 1); image_pos_y >= 0; --image_pos_y) {
+                for (short image_pos_x = 0; image_pos_x < image_width; ++image_pos_x) {
+                    final int normalized_y_value = (yiq_y_power_data[yiq_data_idx] >> n) + this.mean;
+                    final int normalized_i_value = yiq_i_power_data[yiq_data_idx] >> n;
+                    final int normalized_q_value = yiq_q_power_data[yiq_data_idx] >> n;
+                    // The folowing is equivalent to the conversion:
+                    // R = Y + 0.953125*I + 0.62109375*Q
+                    // G = Y - 0.2724609375*I - 0.646484375*Q
+                    // B = Y - 1.106445313*I + 1.703125*Q
+                    final int r_value = normalized_y_value + ((normalized_i_value * 979 + normalized_q_value * 636) >> 10);
+                    final int g_value = normalized_y_value + ((normalized_i_value * -279 + normalized_q_value * -662) >> 10);
+                    final int b_value = normalized_y_value + ((normalized_i_value * -1133 + normalized_q_value * 1744) >> 10);
+                    rgb_image_data[image_pos_y * image_width + image_pos_x] = (0xFF000000 | ((r_value < 0) ? 0 : ((r_value > 255) ? 255 : r_value)) << 16 | ((g_value < 0) ? 0 : ((g_value > 255) ? 255 : g_value)) << 8 | ((b_value < 0) ? 0 : ((b_value > 255) ? 255 : b_value)));
+                    ++yiq_data_idx;
                 }
-                n4 += this.width - n2;
+                yiq_data_idx += yiq_data_line_offset;
             }
             return;
         }
-        int n13 = 0;
-        for (short n14 = (short)(n3 - 1); n14 >= 0; --n14) {
-            for (short n15 = 0; n15 < n2; ++n15) {
-                final int n16 = (array[n13] >> n) + this.mean;
-                final int n17 = (n16 < 0) ? 0 : ((n16 > 255) ? 255 : n16);
-                array4[n14 * n2 + n15] = (0xFF000000 | n17 << 16 | n17 << 8 | n17);
-                ++n13;
+//        // I somehow feel that another check is missing here
+//        else if (this.colorType == Constants.GRAY_IMAGE){
+        else {
+            int yiq_data_idx = 0;
+            for (short image_pos_y = (short)(image_height - 1); image_pos_y >= 0; --image_pos_y) {
+                for (short image_pos_x = 0; image_pos_x < image_width; ++image_pos_x) {
+                    final int normalized_y_value = (yiq_y_power_data[yiq_data_idx] >> n) + this.mean;
+                    final int gray_rgb_value = (normalized_y_value < 0) ? 0 : ((normalized_y_value > 255) ? 255 : normalized_y_value);
+                    rgb_image_data[image_pos_y * image_width + image_pos_x] = (0xFF000000 | gray_rgb_value << 16 | gray_rgb_value << 8 | gray_rgb_value);
+                    ++yiq_data_idx;
+                }
+                yiq_data_idx += yiq_data_line_offset;
             }
-            n13 += this.width - n2;
         }
+//        else {
+//            throw new IllegalArgumentException("Invalid color type");
+//        }
     }
     
     public Image getImage() {
