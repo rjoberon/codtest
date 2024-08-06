@@ -137,7 +137,6 @@ public class CCode
         }
         this.low = 0;
         this.high = Top_value;
-        this.curbit = 16;
         return true;
     }
     
