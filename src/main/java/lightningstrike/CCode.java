@@ -95,7 +95,7 @@ public class CCode
             }
             if (decodeSymbol == CCode.DECODE_ERR) {
                 //How would that be handled?
-                throw new Exception("Decode error");
+                break;
             }
             this.oBuf[this.oBufIndex] = (byte)(this.index_to_char[decodeSymbol] - n2);
             ++this.oBufIndex;
