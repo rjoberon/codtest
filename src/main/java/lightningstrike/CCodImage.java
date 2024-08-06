@@ -310,7 +310,7 @@ public class CCodImage extends Constants
             }
         }
         this.YiqToRgb(n2, this.yiqY.yiqP, this.yiqI.yiqP, this.yiqQ.yiqP, this.rgbData, this.currentWidth, this.currentHeight);
-        final int n3 = this.currentWidth * this.currentHeight;
+//        final int n3 = this.currentWidth * this.currentHeight; //unused variable
         this.decompressedImage = null;
         this.decompressedImage = Toolkit.getDefaultToolkit().createImage(new MemoryImageSource(this.currentWidth, this.currentHeight, this.rgbData, 0, this.currentWidth));
         return true;
