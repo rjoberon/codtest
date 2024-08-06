@@ -42,6 +42,14 @@ class AboutDialog extends Dialog {
         comp4.setLayout(new GridLayout(7, 1));
         this.add(comp4, BorderLayout.CENTER);
 
+        comp4.add(new Label(""));
+        comp4.add(new Label("Lightning Strike Version 2.6 ", 1));
+        comp4.add(new Label("A Wavelet Image Decompressor Written in JAVA", 1));
+        comp4.add(new Label("Oct. 1996", 1));
+        comp4.add(new Label("Infinop Inc.", 1));
+        comp4.add(new Label("http://www.infinop.com", 1));
+        comp4.add(new Label(""));
+
         // Add action listener to the cancel button
         this.cancel.addActionListener(new ActionListener() {
             @Override
