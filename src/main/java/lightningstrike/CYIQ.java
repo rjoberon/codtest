@@ -90,9 +90,10 @@ public class CYIQ extends Constants
     public int Decompress(final byte[] array, final int codPointer, final short n) {
         this.codPointer = codPointer;
         final byte[] array2 = new byte[this.width * this.height];
-        if (array2 == null) {
-            return -1;
-        }
+        // array2 cannot ever be null..
+//        if (array2 == null) {
+//            return -1;
+//        }
         if (n == 0) {
             this.InputBeginOfBlock(array, n, (short)0);
             this.codPointer = this.codec.Decode(array, this.codPointer, array2, 2 * this.quantizer[3 * this.levels] + 1);
@@ -299,9 +300,11 @@ public class CYIQ extends Constants
     
     private boolean WaveletReconsT(final short[] array, final short n, final short n2, final short n3) {
         final short[] array2;
-        if ((array2 = new short[n * n2]) == null) {
-            return false;
-        }
+        array2 = new short[n * n2];
+        //array2 cannot ever be null..
+//        if (array2 == null) {
+//            return false;
+//        }
         int n4 = 0;
         int n5 = n2;
         int n6 = 0;
@@ -357,7 +360,7 @@ public class CYIQ extends Constants
             n20 += n2;
             n21 += n2;
         }
-        final short n28 = (short)(n2 / 2 - 1);
+//        final short n28 = (short)(n2 / 2 - 1); //unused variable
         final short n29 = 0;
         final int n30 = n2 / 2 + 1;
         final int n31 = n30 - 1;
@@ -415,9 +418,11 @@ public class CYIQ extends Constants
     
     private boolean WaveletReconsTFast(final short[] array, final short n, final short n2, final short n3) {
         final short[] array2;
-        if ((array2 = new short[n * n2]) == null) {
-            return false;
-        }
+        array2 = new short[n * n2];
+        //array2 cannot ever be null..
+//        if (array2 == null) {
+//            return false;
+//        }
         final short n4 = (short)(n / 2 - 1);
         int n5 = n2 * 2;
         int n6 = n5 + n2;
