@@ -38,6 +38,13 @@ public class CCode
     private int iBufIndex;
     private int oBufIndex;
     
+    //Enum that controlls how the InputBit method handles garbage bits
+    public enum HandleGarbageBitMethod {
+        IGNORE_GARBAGE,
+        FAIL_LONG_GARBAGE_SEQUENCE
+    }
+
+
     public CCode() {
         this.no_of_chars = 1024;
         this.no_of_symbols = this.no_of_chars + 1;
@@ -86,6 +93,10 @@ public class CCode
             if (decodeSymbol == this.eOF_symbol) {
                 break;
             }
+            if (decodeSymbol == CCode.DECODE_ERR) {
+                //How would that be handled?
+                throw new Exception("Decode error");
+            }
             this.oBuf[this.oBufIndex] = (byte)(this.index_to_char[decodeSymbol] - n2);
             ++this.oBufIndex;
             this.UpdateModel(decodeSymbol);
@@ -99,14 +110,14 @@ public class CCode
         this.curbit = 0;
     }
     
-    public int InputBit() {
+    public int InputBit(HandleGarbageBitMethod handleGarbageBitMethod) {
         if (this.bits_to_go == 0) {
             this.buffer = this.iBuf[this.iBufIndex];
             ++this.iBufIndex;
             if (this.buffer == -1) {
                 ++this.garbage_bits;
-                if (this.garbage_bits > 14) {
-                    return -9999;
+                if (handleGarbageBitMethod == HandleGarbageBitMethod.FAIL_LONG_GARBAGE_SEQUENCE && this.garbage_bits > 14) {
+                    return CCode.DECODE_ERR;
                 }
             }
             this.bits_to_go = 8;
@@ -121,60 +132,93 @@ public class CCode
     public boolean StartDecoding() {
         this.value = 0;
         for (int i = 1; i <= 16; ++i) {
-            this.value = 2 * this.value + this.InputBit();
+            this.value = 2 * this.value + this.InputBit(HandleGarbageBitMethod.FAIL_LONG_GARBAGE_SEQUENCE);
         }
         this.low = 0;
-        this.high = 65535;
+        this.high = Top_value;
         this.curbit = 16;
         return true;
     }
     
-    public int DecodeSymbol(final int[] array) {
-        int n = 1;
-        final int n2 = this.high - this.low + 1;
-        final int n3 = ((this.value - this.low + 1) * array[0] - 1) / n2;
-        int n4 = 1;
-        while (array[n++] > n3) {
-            ++n4;
+    
+    public int DecodeSymbol(final int[] current_cum_freq) {
+        //Seems to be algorithm as described in the book:
+        // "Introduction to Data Compression" by Khalid Sayood
+        // 4th Edition, page 117
+
+        //Decode contents of the current buffer in value
+        final int total_cum_freq = current_cum_freq[0];
+        final int current_interval_size = this.high - this.low + 1;
+        final int n3 = ((this.value - this.low + 1) * total_cum_freq - 1) / current_interval_size;
+
+//        // i was initially "n"
+//        // current_symbol_index was "n4"
+//        // current_cum_freq was "array"
+        // int i = 1;
+        // int current_symbol_index = 1;
+        // while (current_cum_freq[i++] > n3) {
+        //     ++current_symbol_index;
+        // }
+// The folowing code should be equivalent to the above commented code
+
+        int current_symbol_index = 1;
+        for (int i = 1; current_cum_freq[i] > n3; i++) {
+            ++current_symbol_index;
         }
-        if (n4 == this.eOF_symbol) {
-            return n4;
+
+
+        if (current_symbol_index == this.eOF_symbol) {
+            return current_symbol_index;
         }
-        this.high = this.low + n2 * array[n4 - 1] / array[0] - 1;
-        this.low += n2 * array[n4] / array[0];
+
+        //Update the interval boundaries
+        this.high = this.low + current_interval_size * current_cum_freq[current_symbol_index - 1] / total_cum_freq - 1;
+        this.low += current_interval_size * current_cum_freq[current_symbol_index] / total_cum_freq;
+
+        //Rescale the interval boundaries
+        //Mapping E_1(x) = 2x
+        //Mapping E_2(x) = 2(x - 0.5)
+        //Mapping E_3(x) = 2(x - 0.25)
         while (true) {
-            if (this.high >= 32768) {
-                if (this.low >= 32768) {
-                    this.value -= 32768;
-                    this.low -= 32768;
-                    this.high -= 32768;
-                }
-                else {
-                    if (this.low < 16384 || this.high >= 49152) {
+             if (this.high >= CCode.Half) {
+                if (this.low >= CCode.Half) {
+                    // The interval is entirely confined to the upper half of the unit interval
+                    // use E_2 mapping
+                    this.value -= CCode.Half;
+                    this.low -= CCode.Half;
+                    this.high -= CCode.Half;
+                } else {
+                    if (this.low < CCode.First_qtr || this.high >= CCode.Third_qtr) {
+                        // low must be smaller than half, and high larger than half
+                        // this means that if either of the above conditions hold, the interval is at least half the size of the unit interval
+                        // the next symbol can be decoded
                         break;
+                    } else {
+                        // Then interval is confined to the central half of the unit interval
+                        // use E_3 mapping
+                        this.value -= CCode.First_qtr;
+                        this.low -= CCode.First_qtr;
+                        this.high -= CCode.First_qtr;
                     }
-                    this.value -= 16384;
-                    this.low -= 16384;
-                    this.high -= 16384;
                 }
+            } else {
+                // The interval is entirely confined to the lower half of the unit interval
+                // use E_1 mapping
             }
+
+            //Apply rest of mapping
             this.low *= 2;
             this.high = 2 * this.high + 1;
-            if (this.bits_to_go == 0) {
-                this.buffer = this.iBuf[this.iBufIndex];
-                ++this.iBufIndex;
-                if (this.buffer == -1) {
-                    ++this.garbage_bits;
-                }
-                this.bits_to_go = 8;
+
+            //Integrate a new bit into the value
+            final int next_bit = InputBit(HandleGarbageBitMethod.IGNORE_GARBAGE);
+            if (next_bit == CCode.DECODE_ERR) {
+                //Due to the IGNORE_GARBAGE method, this should never happen
+                return CCode.DECODE_ERR;
             }
-            final int n5 = this.buffer & 0x1;
-            this.buffer >>= 1;
-            --this.bits_to_go;
-            this.value = 2 * this.value + n5;
-            ++this.curbit;
+            this.value = 2 * this.value + next_bit;
         }
-        return n4;
+        return current_symbol_index;
     }
     
     public void StartModel() {
@@ -204,11 +248,11 @@ public class CCode
         int next_higher_freq_symbol_index;
         for (next_higher_freq_symbol_index = decoded_symbol_index; this.freq[next_higher_freq_symbol_index] == this.freq[next_higher_freq_symbol_index - 1]; --next_higher_freq_symbol_index) {}
         if (next_higher_freq_symbol_index < decoded_symbol_index) {
-            final byte lower_rank_symbol_char = this.index_to_char[next_higher_freq_symbol_index];
+            final byte higher_freq_symbol_char = this.index_to_char[next_higher_freq_symbol_index];
             final byte decoded_symbol_char = this.index_to_char[decoded_symbol_index];
             this.index_to_char[next_higher_freq_symbol_index] = decoded_symbol_char;
-            this.index_to_char[decoded_symbol_index] = lower_rank_symbol_char;
-            this.char_to_index[lower_rank_symbol_char] = decoded_symbol_index;
+            this.index_to_char[decoded_symbol_index] = higher_freq_symbol_char;
+            this.char_to_index[higher_freq_symbol_char] = decoded_symbol_index;
             this.char_to_index[decoded_symbol_char] = next_higher_freq_symbol_index;
         }
 
