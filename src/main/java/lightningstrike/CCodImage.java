@@ -167,7 +167,7 @@ public class CCodImage extends Constants
         }
         this.AdjustWidthHeight();
         this.yiqY.ReadFile(inputStream);
-        if (this.colorType == 1) {
+        if (this.colorType == Constants.COLOR_IMAGE) {
             this.yiqI.ReadFile(inputStream);
             this.yiqQ.ReadFile(inputStream);
         }
@@ -179,7 +179,7 @@ public class CCodImage extends Constants
         if (!this.yiqY.InitDecompress(this.width, this.height, this.waveletLevels)) {
             return false;
         }
-        if (this.colorType == 1) {
+        if (this.colorType == Constants.COLOR_IMAGE) {
             if (!this.yiqI.InitDecompress(this.width, this.height, this.waveletLevels)) {
                 return false;
             }
@@ -260,7 +260,7 @@ public class CCodImage extends Constants
         final Properties properties = new Properties();
         properties.fileName = this.fileName;
         properties.fileSize = this.codedSize + this.headerSize;
-        if (this.colorType == 1) {
+        if (this.colorType == Constants.COLOR_IMAGE) {
             properties.color = true;
         }
         else {
@@ -317,7 +317,7 @@ public class CCodImage extends Constants
         if ((this.off = this.yiqY.Decompress(fileBuf, this.off, n)) == -1) {
             return false;
         }
-        if (this.colorType == 1) {
+        if (this.colorType == Constants.COLOR_IMAGE) {
             if ((this.off = this.yiqI.Decompress(fileBuf, this.off, n)) == -1) {
                 return false;
             }
