@@ -7,7 +7,7 @@ package lightningstrike;
 public class CCode
 {
     static final int Code_value_bits = 16;
-    static final int Top_value = 2^Code_value_bits - 1;
+    static final int Top_value = (1 << Code_value_bits) - 1;
     static final int First_qtr = (Top_value/4) + 1;
     static final int Half = (2 * First_qtr);
     static final int Third_qtr = 3 * First_qtr;
@@ -142,6 +142,9 @@ public class CCode
         }
         this.low = 0;
         this.high = Top_value;
+
+        //Print out the value of curbit
+        System.out.println("Curbit: " + this.curbit);
         return true;
     }
     
