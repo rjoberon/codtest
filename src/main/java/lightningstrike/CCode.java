@@ -133,7 +133,7 @@ public class CCode
     public boolean StartDecoding() {
         this.value = 0;
         for (int i = 1; i <= 16; ++i) {
-            this.value = 2 * this.value + this.InputBit();
+            this.value = 2 * this.value + (this.InputBit() & 0x1);
         }
         this.low = 0;
         this.high = Top_value;
@@ -205,7 +205,7 @@ public class CCode
             //Integrate a new bit into the value
             final int next_bit = InputBit();
             if (next_bit == CCode.DECODE_ERR) {
-                //Due to the IGNORE_GARBAGE method, this should never happen
+                //How to handle this more sensibly?
                 return CCode.DECODE_ERR;
             }
             this.value = 2 * this.value + (next_bit & 0x1);
