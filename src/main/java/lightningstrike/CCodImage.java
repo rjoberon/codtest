@@ -204,7 +204,6 @@ public class CCodImage extends Constants
         this.height = (short)(this.imageHeight + (n - this.imageHeight % n) % n);
     }
     
-    //this.YiqToRgb(n2, this.yiqY.yiqP, this.yiqI.yiqP, this.yiqQ.yiqP, this.rgbData, this.currentWidth, this.currentHeight);
     private void YiqToRgb(final short n, final short[] yiq_y_power_data, final short[] yiq_i_power_data, final short[] yiq_q_power_data, final int[] rgb_image_data, final short image_width, final short image_height) {
         // The addition of the line offset means that the yiq data is stored in a row major order
         // (as are most graphics formats if memory serves)
