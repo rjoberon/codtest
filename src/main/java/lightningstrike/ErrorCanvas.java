@@ -15,12 +15,12 @@ class ErrorCanvas extends Canvas
     String message;
     
     public ErrorCanvas(final String message) {
-        super.resize(300, 200);
+        setSize(300, 200);
         this.message = message;
     }
     
     public void paint(final Graphics graphics) {
-        final Dimension size = this.size();
+        final Dimension size = this.getSize();
         graphics.setColor(Color.yellow);
         final int[] xpoints = new int[4];
         final int[] ypoints = new int[4];

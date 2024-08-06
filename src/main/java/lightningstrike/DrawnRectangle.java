@@ -32,7 +32,7 @@ public class DrawnRectangle extends Rectangle
     public DrawnRectangle(final Component drawInto, final int thick, final int x, final int y, final int width, final int height) {
         this.drawInto = drawInto;
         this.thick = thick;
-        this.reshape(x, y, width, height);
+        this.setBounds(x, y, width, height);
     }
     
     public Component component() {

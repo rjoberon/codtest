@@ -1,28 +1,28 @@
 package lightningstrike;
 
-import java.awt.Event;
 import java.awt.Rectangle;
-import java.awt.LayoutManager;
 import java.awt.FlowLayout;
-import java.awt.Component;
 import java.awt.Color;
-import java.awt.Frame;
 import java.awt.Panel;
 import java.awt.Button;
 import java.awt.Dialog;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 // 
 // Decompiled by Procyon v0.6.0
 // 
 
-class ErrorMessage extends Dialog
-{
+class ErrorMessage extends Dialog {
     Strike parent;
     Button Cancel;
     Panel buttonPanel;
     String message;
     public boolean displayNow;
-    
+
     public ErrorMessage(final Strike strike, final String message) {
         super(strike, "Lightning Strike Error !", false);
         this.displayNow = false;
@@ -30,9 +30,9 @@ class ErrorMessage extends Dialog
         this.parent = strike;
         this.message = message;
         this.displayNow = true;
-        final Rectangle bounds = strike.bounds();
-        super.move(bounds.x + 90, bounds.y + 90);
-        super.resize(280, 200);
+        final Rectangle bounds = strike.getBounds();
+        super.setLocation(bounds.x + 90, bounds.y + 90);
+        super.setSize(280, 200);
         final Panel comp = new Panel();
         comp.setBackground(Color.lightGray);
         this.add("North", comp);
@@ -48,25 +48,25 @@ class ErrorMessage extends Dialog
         this.add("South", this.buttonPanel);
         this.add("Center", new ErrorCanvas(message));
         this.setResizable(true);
-    }
-    
-    public boolean handleEvent(final Event event) {
-        if (event.target == this.Cancel) {
-            this.displayNow = false;
-            this.hide();
-            this.dispose();
-            return true;
-        }
-        switch (event.id) {
-            case 201: {
-                this.displayNow = false;
-                this.hide();
-                this.dispose();
-                return true;
+
+        // Add ActionListener for the Cancel button
+        this.Cancel.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                displayNow = false;
+                setVisible(false);
+                dispose();
             }
-            default: {
-                return false;
+        });
+
+        // Add WindowListener for the window closing event
+        this.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                displayNow = false;
+                setVisible(false);
+                dispose();
             }
-        }
+        });
     }
 }

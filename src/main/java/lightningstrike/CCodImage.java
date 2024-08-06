@@ -130,7 +130,8 @@ public class CCodImage extends Constants
         this.commentSize = Constants.READWORD(inputStream);
         this.fileBuf = new byte[this.codedSize];
         if (this.fileBuf == null) {
-            (this.errorDialog = new ErrorMessage(this.oneStrike, new String("No Enough Memory !"))).show();
+            this.errorDialog = new ErrorMessage(this.oneStrike, new String("No Enough Memory !"));
+            this.errorDialog.setVisible(true);
             return false;
         }
         this.imageWidth = Constants.READWORD(inputStream);
@@ -142,7 +143,8 @@ public class CCodImage extends Constants
         }
         this.encoderType = Constants.READONEBYTE(inputStream);
         if (this.encoderType == 2) {
-            (this.errorDialog = new ErrorMessage(this.oneStrike, new String("This version can not decompress Loss-Less compressed image"))).show();
+            this.errorDialog = new ErrorMessage(this.oneStrike, new String("This version can not decompress Loss-Less compressed image"));
+            this.errorDialog.setVisible(true);
             return false;
         }
         this.compressionType = Constants.READONEBYTE(inputStream);
@@ -310,7 +312,7 @@ public class CCodImage extends Constants
             }
         }
         this.YiqToRgb(n2, this.yiqY.yiqP, this.yiqI.yiqP, this.yiqQ.yiqP, this.rgbData, this.currentWidth, this.currentHeight);
-        final int n3 = this.currentWidth * this.currentHeight;
+//        final int n3 = this.currentWidth * this.currentHeight; //unused variable
         this.decompressedImage = null;
         this.decompressedImage = Toolkit.getDefaultToolkit().createImage(new MemoryImageSource(this.currentWidth, this.currentHeight, this.rgbData, 0, this.currentWidth));
         return true;
