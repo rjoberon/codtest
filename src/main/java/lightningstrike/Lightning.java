@@ -1,25 +1,26 @@
 package lightningstrike;
 
-import java.awt.Frame;
-import java.awt.Event;
 import java.awt.Graphics;
-import java.awt.Component;
-import java.awt.Image;
 import java.awt.Button;
 import java.applet.Applet;
+
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 // 
 // Decompiled by Procyon v0.6.0
 // 
 
-public class Lightning extends Applet
+// We will not use this class as an applet anyway...so we can simply ignore those warnings...
+@SuppressWarnings("removal")
+public class Lightning extends Applet implements ActionListener
 {
     private Button b;
-    private boolean show;
+//    private boolean show;
     private String buttonString;
     public boolean displayNow;
     private boolean canNotActivate;
-    private Image openFileImage;
+//    private Image openFileImage;
     public Strike oneStrike;
     private String hostName;
     private String dirName;
@@ -57,14 +58,19 @@ public class Lightning extends Applet
             this.fileList[i - 1] = this.fileName;
         }
         this.buttonString = " Lightning Strike Implemented in JAVA ";
-        this.add(this.b = new Button(this.buttonString));
+        this.b = new Button(this.buttonString);
+        this.add(this.b);
+        this.b.addActionListener(this);
+
     }
     
     public void paint(final Graphics graphics) {
     }
     
-    public boolean action(final Event event, final Object o) {
-        if (event.target == this.b) {
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == this.b) {
             if (this.oneStrike == null) {
                 if (this.getParent().getParent() == null) {
                     System.out.println("Parent frame is null!");
@@ -72,31 +78,28 @@ public class Lightning extends Applet
                 if (!this.canNotActivate) {
                     this.oneStrike = new Strike(this, this.fullDirName, this.fileList);
                     this.displayNow = true;
-                }
-                else {
+                } else {
                     this.displayNow = false;
                 }
-                return true;
+                return;
             }
             if (this.displayNow) {
                 this.oneStrike.toFront();
                 this.oneStrike.requestFocus();
                 this.oneStrike.reShow();
-                return true;
+                return;
             }
             if (!this.canNotActivate) {
                 this.oneStrike = new Strike(this, this.fullDirName, this.fileList);
                 this.displayNow = true;
-            }
-            else {
+            } else {
                 this.displayNow = false;
             }
         }
-        return false;
     }
     
     public Lightning() {
-        this.show = false;
+//        this.show = false;
         this.displayNow = false;
         this.canNotActivate = false;
     }
