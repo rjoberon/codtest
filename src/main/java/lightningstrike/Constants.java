@@ -27,7 +27,7 @@ public class Constants
     public static final byte BI_WAVELET = 1;
     public static final byte ARITHMETIC = 1;
     public static final byte ARITHMETIC_LOSSLESS = 2;
-    public static final byte SISD = 1; // Simplest Integer Spectral Decomposition(?) (From the paper §2)
+    public static final byte SISD = 1; //A Guess on possible meaning? Simplest Integer Spectral Decomposition(?) (From the paper §2)
     public static final byte TABLE_QUANTIZATION = 1;
     public static final byte YIQ_RGB = 1;
     public static final byte YUV_RGB = 2;
