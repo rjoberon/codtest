@@ -1,3 +1,5 @@
+package lightningstrike;
+
 import java.awt.image.ImageObserver;
 import java.awt.Graphics;
 import java.awt.Image;

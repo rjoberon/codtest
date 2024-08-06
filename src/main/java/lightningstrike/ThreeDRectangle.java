@@ -1,3 +1,5 @@
+package lightningstrike;
+
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Component;

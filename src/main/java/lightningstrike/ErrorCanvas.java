@@ -1,3 +1,5 @@
+package lightningstrike;
+
 import java.awt.Dimension;
 import java.awt.Polygon;
 import java.awt.Color;

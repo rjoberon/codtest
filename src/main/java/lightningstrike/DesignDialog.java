@@ -1,9 +1,12 @@
+package lightningstrike;
+
 import java.awt.Event;
 import java.awt.Rectangle;
 import java.awt.LayoutManager;
 import java.awt.FlowLayout;
 import java.awt.Component;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Frame;
 import java.awt.Panel;
 import java.awt.Button;
@@ -13,7 +16,7 @@ import java.awt.Dialog;
 // Decompiled by Procyon v0.6.0
 // 
 
-class ErrorMessage extends Dialog
+class DesignDialog extends Dialog
 {
     Strike parent;
     Button Cancel;
@@ -21,16 +24,17 @@ class ErrorMessage extends Dialog
     String message;
     public boolean displayNow;
     
-    public ErrorMessage(final Strike strike, final String message) {
-        super(strike, "Lightning Strike Error !", false);
+    public DesignDialog(final Strike strike, final String message) {
+        super(strike, "Lightning Strike in Java", true);
         this.displayNow = false;
+        this.setFont(new Font("TimesRoman", 0, 18));
         this.setBackground(Color.lightGray);
         this.parent = strike;
         this.message = message;
         this.displayNow = true;
         final Rectangle bounds = strike.bounds();
         super.move(bounds.x + 90, bounds.y + 90);
-        super.resize(280, 200);
+        super.resize(380, 200);
         final Panel comp = new Panel();
         comp.setBackground(Color.lightGray);
         this.add("North", comp);

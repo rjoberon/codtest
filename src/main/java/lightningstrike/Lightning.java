@@ -1,3 +1,5 @@
+package lightningstrike;
+
 import java.awt.Frame;
 import java.awt.Event;
 import java.awt.Graphics;
