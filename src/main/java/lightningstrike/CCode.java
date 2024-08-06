@@ -37,12 +37,6 @@ public class CCode
     public int model_delta;
     private int iBufIndex;
     private int oBufIndex;
-    
-    //Enum that controlls how the InputBit method handles garbage bits
-    public enum HandleGarbageBitMethod {
-        IGNORE_GARBAGE,
-        FAIL_LONG_GARBAGE_SEQUENCE
-    }
 
 
     public CCode() {
@@ -110,15 +104,21 @@ public class CCode
         this.curbit = 0;
     }
     
-    public int InputBit(HandleGarbageBitMethod handleGarbageBitMethod) {
+    public int InputBit() {
         if (this.bits_to_go == 0) {
-            this.buffer = this.iBuf[this.iBufIndex];
-            ++this.iBufIndex;
-            if (this.buffer == -1) {
+            if (this.iBufIndex >= this.iBuf.length) {
+                // As done in the original code (i.e. the ACM paper) we allow to read more bits than available
+                // but only up to a limit of (CCode.Code_value_bits - 2) times
+                // the returned bits in this case are "arbitrary" and in our case will be set to 1
+                // (since EOF was -1, and thus the lower bits = 0xFF)
+                this.buffer = 255;
                 ++this.garbage_bits;
-                if (handleGarbageBitMethod == HandleGarbageBitMethod.FAIL_LONG_GARBAGE_SEQUENCE && this.garbage_bits > 14) {
+                if (this.garbage_bits > (CCode.Code_value_bits - 2)) {
                     return CCode.DECODE_ERR;
                 }
+            } else {
+                this.buffer = this.iBuf[this.iBufIndex];
+                ++this.iBufIndex;
             }
             this.bits_to_go = 8;
         }
@@ -132,7 +132,7 @@ public class CCode
     public boolean StartDecoding() {
         this.value = 0;
         for (int i = 1; i <= 16; ++i) {
-            this.value = 2 * this.value + this.InputBit(HandleGarbageBitMethod.FAIL_LONG_GARBAGE_SEQUENCE);
+            this.value = 2 * this.value + this.InputBit();
         }
         this.low = 0;
         this.high = Top_value;
@@ -142,14 +142,19 @@ public class CCode
     
     
     public int DecodeSymbol(final int[] current_cum_freq) {
-        //Seems to be algorithm as described in the book:
+        //Seems to be the algorithm as described:
+        // "Arithmetic coding for data compression" by Witten, Neal, and Cleary
+        // https://dl.acm.org/doi/pdf/10.1145/214762.214771
+        // a more detailed explanation can be found in
         // "Introduction to Data Compression" by Khalid Sayood
         // 4th Edition, page 117
+        // and
+        // https://marknelson.us/posts/2014/10/19/data-compression-with-arithmetic-coding.html
 
         //Decode contents of the current buffer in value
         final int total_cum_freq = current_cum_freq[0];
-        final int current_interval_size = this.high - this.low + 1;
-        final int n3 = ((this.value - this.low + 1) * total_cum_freq - 1) / current_interval_size;
+        final int range = this.high - this.low + 1;
+        final int scaled_value = ((this.value - this.low + 1) * total_cum_freq - 1) / range;
 
 //        // i was initially "n"
 //        // current_symbol_index was "n4"
@@ -162,7 +167,7 @@ public class CCode
 // The folowing code should be equivalent to the above commented code
 
         int current_symbol_index = 1;
-        for (int i = 1; current_cum_freq[i] > n3; i++) {
+        for (int i = 1; current_cum_freq[i] > scaled_value; i++) {
             ++current_symbol_index;
         }
 
@@ -172,8 +177,8 @@ public class CCode
         }
 
         //Update the interval boundaries
-        this.high = this.low + current_interval_size * current_cum_freq[current_symbol_index - 1] / total_cum_freq - 1;
-        this.low += current_interval_size * current_cum_freq[current_symbol_index] / total_cum_freq;
+        this.high = this.low + range * current_cum_freq[current_symbol_index - 1] / total_cum_freq - 1;
+        this.low += range * current_cum_freq[current_symbol_index] / total_cum_freq;
 
         //Rescale the interval boundaries
         //Mapping E_1(x) = 2x
@@ -208,15 +213,17 @@ public class CCode
 
             //Apply rest of mapping
             this.low *= 2;
-            this.high = 2 * this.high + 1;
+            this.high *= 2;
+            this.high += 1;
 
             //Integrate a new bit into the value
-            final int next_bit = InputBit(HandleGarbageBitMethod.IGNORE_GARBAGE);
+            final int next_bit = InputBit();
             if (next_bit == CCode.DECODE_ERR) {
                 //Due to the IGNORE_GARBAGE method, this should never happen
                 return CCode.DECODE_ERR;
             }
-            this.value = 2 * this.value + next_bit;
+            this.value *= 2;
+            this.value += (next_bit != 0) ? 1 : 0; //Make sure that next_bit really is only 1 or 0
         }
         return current_symbol_index;
     }
