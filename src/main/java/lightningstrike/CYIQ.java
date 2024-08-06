@@ -55,6 +55,8 @@ public class CYIQ extends Constants
     }
     
     protected void InputEndOfBlock(final byte[] array) {
+        // These tests for the string "cod" in the byte array
+        // and seem to be rather fuzzy on the exact location of the string...
         if (array[this.codPointer] == 99 && array[this.codPointer + 1] == 111 && array[this.codPointer + 2] == 100) {
             this.codPointer += 3;
             return;
