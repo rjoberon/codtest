@@ -57,6 +57,16 @@ public class CCode
         // To get a feeling for how many characters are actually used:
         // System.out.println("Number of characters: " + no_of_chars);
 
+        if (no_of_chars > 255) {
+            // This code works with the java type byte as chars, so the number of characters is limited to 255!
+            System.out.println("Warning: Number of characters is larger than 255. Only the 8 LSB will be used. Could mean that decoder will not work correctly.");
+        }
+
+        if (no_of_chars > CCode.No_of_chars) {
+            // This will result in problems later anyways during initialization of the model, so we might as well stop here
+            throw new IllegalArgumentException("Number of characters is larger than the maximum number of characters allowed.");
+        }
+
         if (no_of_chars == 1) {
             this.max_frequency = 8192;
             this.model_delta = 1000;
