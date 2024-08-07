@@ -54,8 +54,8 @@ public class CCode
     
     public void Init(final int no_of_chars) {
 
-        //Print out the number of characters used in this encoding
-        System.out.println("Number of characters: " + no_of_chars);
+        // To get a feeling for how many characters are actually used:
+        // System.out.println("Number of characters: " + no_of_chars);
 
         if (no_of_chars == 1) {
             this.max_frequency = 8192;
@@ -150,9 +150,6 @@ public class CCode
         }
         this.low = 0;
         this.high = Top_value;
-
-        //Print out the value of curbit
-        System.out.println("Curbit: " + this.curbit);
         return true;
     }
     
