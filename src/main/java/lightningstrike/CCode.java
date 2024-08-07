@@ -77,12 +77,12 @@ public class CCode
         this.iBufIndex = iBufIndex;
         this.oBufIndex = 0;
         this.Init(no_of_chars);
-        int n2;
+        int median_char_idx;
         if (no_of_chars % 2 == 0) {
-            n2 = no_of_chars / 2 - 1;
+            median_char_idx = no_of_chars / 2 - 1;
         }
         else {
-            n2 = no_of_chars / 2;
+            median_char_idx = no_of_chars / 2;
         }
         this.StartModel();
         this.StartInputingBits();
@@ -96,8 +96,16 @@ public class CCode
                 //How would that be handled?
                 break;
             }
-            //Why is this substraction needed? does this have anything to do with the possible negative values in the index_to_char array?
-            this.oBuf[this.oBufIndex] = (byte)(this.index_to_char[decodeSymbol] - n2);
+            // The value returned from "index_to_char" will be negative for values larger than 127
+            // but that is only by accident.
+            // The explicit unsigned conversion to int will ensure that the value is interpreted as if it was the 8 LSB of an integer
+            // (i.e. in the range of 0 to 255)
+            // This seems to be not strictly needed, but automagic sign extionsion (or lack thereof) is confusing...so make it explicit
+            //
+            // The substraction of median_char_idx is probably to mirror a similar transformation in the encoder
+            // I expect the reason for this is easier quantization.
+            // (The lower median_char_idx values would now be negative, and thus can be spread out to dequantize by a simple multiplication)
+            this.oBuf[this.oBufIndex] = (byte)( Byte.toUnsignedInt(this.index_to_char[decodeSymbol]) - median_char_idx);
             ++this.oBufIndex;
             this.UpdateModel(decodeSymbol);
         }
