@@ -115,6 +115,18 @@ public class CCodImage extends Constants
     }
     
     public boolean ReadFile(final InputStream inputStream, final InputStream inputStream2) {
+    	/*
+    	 * | len | content      |
+    	 * |-----+--------------|
+    	 * |   8 | version      |
+    	 * |   2 | header size  |
+    	 * |   4 | data size    |
+    	 * |   2 | comment size |
+    	 * |   2 | width        |
+    	 * |   2 | height       |
+    	 * |   1 | bpp          |
+    	 * |   1 | color type   |   
+    	 */
     	/* beginning of file: "CIS" + version number ("2.5" or "3.0") */
         if (!Constants.READBYTES(inputStream, this.title, 8)) {
             return false;

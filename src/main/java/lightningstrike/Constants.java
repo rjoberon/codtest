@@ -37,7 +37,9 @@ public class Constants
     public int fileResetLimit;
     
     public static short GETWORD(final byte[] array, final int n) {
-        return (short)((0xFF & array[n + 1]) << 8 | (0xFF & array[n]));
+        final int intermediate = (0xFF & array[n + 1]) << 8 | (0xFF & array[n]);
+		final short result = (short)intermediate;
+		return result;
     }
     
     public static byte READONEBYTE(final InputStream inputStream) {
@@ -93,7 +95,8 @@ public class Constants
     public static int READDWORD(final InputStream inputStream) {
         final byte[] array = new byte[4];
         READBYTES(inputStream, array, 4);
-        return (short)((0xFF & array[3]) << 24 | (0xFF & array[2]) << 16 | (0xFF & array[1]) << 8 | (0xFF & array[0]));
+        // rja, 2025-09-23: removed cast to short since it produced negative values (→ data sizes)
+		return (0xFF & array[3]) << 24 | (0xFF & array[2]) << 16 | (0xFF & array[1]) << 8 | (0xFF & array[0]);
     }
     
     public static boolean SEEK(final InputStream inputStream, final int n, final byte b) {

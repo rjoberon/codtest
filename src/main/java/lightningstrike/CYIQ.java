@@ -76,10 +76,10 @@ public class CYIQ extends Constants
         return true;
     }
     
-    public boolean InitDecompress(final short n, final short n2, final short n3) {
-        this.levels = (short)(n3 - this.subSamples);
-        this.width = (short)(n >> this.subSamples);
-        this.height = (short)(n2 >> this.subSamples);
+    public boolean InitDecompress(final short width, final short height, final short waveletLevels) {
+        this.levels = (short)(waveletLevels - this.subSamples);
+        this.width = (short)(width >> this.subSamples);
+        this.height = (short)(height >> this.subSamples);
         this.size = this.width * this.height;
         this.yiqP = null;
         this.yiqP = new short[this.size];
@@ -91,16 +91,16 @@ public class CYIQ extends Constants
     
     public int Decompress(final byte[] array, final int codPointer, final short n) {
         this.codPointer = codPointer;
-        final byte[] array2 = new byte[this.width * this.height];
+        final byte[] oBuf = new byte[this.width * this.height];
         // array2 cannot ever be null..
 //        if (array2 == null) {
 //            return -1;
 //        }
         if (n == 0) {
             this.InputBeginOfBlock(array, n, (short)0);
-            this.codPointer = this.codec.Decode(array, this.codPointer, array2, 2 * this.quantizer[3 * this.levels] + 1);
+            this.codPointer = this.codec.Decode(array, this.codPointer, oBuf, 2 * this.quantizer[3 * this.levels] + 1);
             this.InputEndOfBlock(array);
-            if (!this.DataRearr(array2, n, (short)0)) {
+            if (!this.DataRearr(oBuf, n, (short)0)) {
                 return -1;
             }
         }
@@ -108,13 +108,13 @@ public class CYIQ extends Constants
             for (short n2 = 0; n2 < 3; ++n2) {
                 this.InputBeginOfBlock(array, n, n2);
                 if (n < this.levels - this.zeroLevels) {
-                    this.codPointer = this.codec.Decode(array, this.codPointer, array2, 2 * this.quantizer[3 * (this.levels - n) + n2] + 2);
+                    this.codPointer = this.codec.Decode(array, this.codPointer, oBuf, 2 * this.quantizer[3 * (this.levels - n) + n2] + 2);
                 }
                 else {
-                    this.codPointer = this.codec.Decode(array, this.codPointer, array2, 2 * this.quantizer[3 * (this.levels - n) + n2] + 1);
+                    this.codPointer = this.codec.Decode(array, this.codPointer, oBuf, 2 * this.quantizer[3 * (this.levels - n) + n2] + 1);
                 }
                 this.InputEndOfBlock(array);
-                if (!this.DataRearr(array2, n, n2)) {
+                if (!this.DataRearr(oBuf, n, n2)) {
                     return -1;
                 }
             }

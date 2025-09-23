@@ -55,7 +55,7 @@ public class CCode
     public void Init(final int no_of_chars) {
 
         // To get a feeling for how many characters are actually used:
-        // System.out.println("Number of characters: " + no_of_chars);
+        System.out.println("Number of characters: " + no_of_chars);
 
         if (no_of_chars > 255) {
             // This code works with the java type byte as chars, so the number of characters is limited to 255!
@@ -273,8 +273,9 @@ public class CCode
             final byte decoded_symbol_char = this.index_to_char[decoded_symbol_index];
             this.index_to_char[next_higher_freq_symbol_index] = decoded_symbol_char;
             this.index_to_char[decoded_symbol_index] = higher_freq_symbol_char;
-            this.char_to_index[higher_freq_symbol_char] = decoded_symbol_index;
-            this.char_to_index[decoded_symbol_char] = next_higher_freq_symbol_index;
+            // rja, 2025-09-23: added Byte.toUnsignedInt() to get "unsigned byte"
+            this.char_to_index[Byte.toUnsignedInt(higher_freq_symbol_char)] = decoded_symbol_index;
+            this.char_to_index[Byte.toUnsignedInt(decoded_symbol_char)] = next_higher_freq_symbol_index;
         }
 
         final int new_decoded_symbol_index = next_higher_freq_symbol_index;

@@ -304,18 +304,22 @@ public class CCodImageNew extends Constants
 	 * @throws IOException
 	 */
 	public static void main(String[] args) throws IOException {
-		final String inFilePath = "/home/rja/";
-		final String inFileName = "cow.cod";
-		final String inFile = inFilePath + inFileName;
+		if (args.length < 1) {
+			System.err.println("usage:");
+			System.err.println(CCodImageNew.class + " <infile>");
+			System.exit(1);
+		}
+		final String inFile = args[0];
 		final InputStream in = new BufferedInputStream(new FileInputStream(inFile));
 		final CCodImageNew cod = new CCodImageNew(in);
 
 		if (cod.StartGenerateImage()) {
 			short levels = cod.GetLevels();
-			for (short level = 0; level < levels + 1; ++level) {
+			short level = 0;
+			for (level = 0; level < levels + 1; ++level) {
 				cod.GenerateImage(level);
-				writeJpg(cod, cod.getImage(), inFile + "_decoded_" + level + ".jpg");
 			}
+			writeJpg(cod, cod.getImage(), inFile + "_decoded_" + level + ".jpg");
 			cod.EndGenerateImage();
 		}
 		in.close();
