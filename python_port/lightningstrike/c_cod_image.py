@@ -49,6 +49,7 @@ class CCodImage:
 
     def read_file(self):
         """Read the fixed header and each color plane's decoder metadata."""
+        header_start = self.input_cod_file.tell()
         magic_marker = self.input_cod_file.read(8)
         if len(magic_marker) != 8:
             return False
@@ -89,6 +90,12 @@ class CCodImage:
         if self.color_type == Constants.COLOR_IMAGE:
             self.yiq_i.read_file(self.input_cod_file)
             self.yiq_q.read_file(self.input_cod_file)
+        header_bytes_read = self.input_cod_file.tell() - header_start
+        if header_bytes_read > self.header_size:
+            return False
+        # Some 3.0 files have reserved bytes after the plane metadata; payload data starts at header_size.
+        if not Constants.skip(self.input_cod_file, self.header_size - header_bytes_read):
+            return False
         return True
 
     def adjust_width_height(self):
