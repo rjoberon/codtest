@@ -1,11 +1,6 @@
 package lightningstrike;
 
-// 
-// Decompiled by Procyon v0.6.0
-// 
-
-public class CCode
-{
+public class CCode {
     static final int Code_value_bits = 16;
     static final int Top_value = (1 << Code_value_bits) - 1;
     static final int First_qtr = (Top_value/4) + 1;

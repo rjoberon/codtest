@@ -2,12 +2,7 @@ package lightningstrike;
 
 import java.io.InputStream;
 
-// 
-// Decompiled by Procyon v0.6.0
-// 
-
-public class CYIQ extends Constants
-{
+public class CYIQ {
     public short[] yiqP;
     public short width;
     public short height;
@@ -92,10 +87,6 @@ public class CYIQ extends Constants
     public int Decompress(final byte[] array, final int codPointer, final short n) {
         this.codPointer = codPointer;
         final byte[] oBuf = new byte[this.width * this.height];
-        // array2 cannot ever be null..
-//        if (array2 == null) {
-//            return -1;
-//        }
         if (n == 0) {
             this.InputBeginOfBlock(array, n, (short)0);
             this.codPointer = this.codec.Decode(array, this.codPointer, oBuf, 2 * this.quantizer[3 * this.levels] + 1);

@@ -2,10 +2,6 @@ package lightningstrike;
 
 import java.io.InputStream;
 
-// 
-// Decompiled by Procyon v0.6.0
-// 
-
 public class Constants
 {
     public static final int MAX_LEVELS = 10;
@@ -34,11 +30,10 @@ public class Constants
     public static final byte YCbCr = 3;
     public static final byte BEGIN = 0;
     public static final byte CURRENT = 1;
-    public int fileResetLimit;
     
     public static short GETWORD(final byte[] array, final int n) {
         final int intermediate = (0xFF & array[n + 1]) << 8 | (0xFF & array[n]);
-		final short result = (short)intermediate;
+        final short result = (short)intermediate;
 		return result;
     }
     
