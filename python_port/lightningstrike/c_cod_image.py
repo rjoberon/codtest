@@ -12,6 +12,8 @@ from .cyiq import CYIQ
 
 
 class CCodImage:
+    """Read and progressively decode a CIS 3.0 wavelet-compressed image."""
+
     def __init__(self, input_cod_file: BinaryIO):
         self.width = 300
         self.height = 200
@@ -46,10 +48,12 @@ class CCodImage:
         self.read_data = 0
 
     def read_file(self):
+        """Read the fixed header and each color plane's decoder metadata."""
         magic_marker = self.input_cod_file.read(8)
         if len(magic_marker) != 8:
             return False
         self.magic_marker = bytearray(magic_marker)
+        # This decoder supports the CIS 3.0 marker only.
         if magic_marker[3:4] != b"3" or magic_marker[5:6] != b"0":
             raise RuntimeError("Version incompatible!")
         self.header_size = Constants.read_word(self.input_cod_file)
@@ -88,11 +92,13 @@ class CCodImage:
         return True
 
     def adjust_width_height(self):
+        """Pad the image dimensions to a multiple of the wavelet grid size."""
         n = 1 << self.wavelet_levels
         self.width = (self.image_width + (n - self.image_width % n) % n) & 0xFFFF
         self.height = (self.image_height + (n - self.image_height % n) % n) & 0xFFFF
 
     def init_decompress(self):
+        """Allocate coefficient buffers for Y and, for color images, I and Q."""
         self.adjust_width_height()
         if not self.yiq_y.init_decompress(self.width, self.height, self.wavelet_levels):
             return False
@@ -104,29 +110,34 @@ class CCodImage:
         return True
 
     def end_decompress(self):
+        """Release per-plane decoder state after all levels have been generated."""
         self.yiq_y.end_decompress()
         if self.color_type == Constants.COLOR_IMAGE:
             self.yiq_i.end_decompress()
             self.yiq_q.end_decompress()
 
     def yiq_to_rgb(self, level, yiq_y_power_data, yiq_i_power_data, yiq_q_power_data, rgb_image_data, image_width, image_height):
+        """Convert the current YIQ level into ARGB pixels in the output buffer."""
         normalization_shift = self.wavelet_levels - level
         y_scale = 1 << max(0, level - self.yiq_y.levels)
         if self.color_type == Constants.COLOR_IMAGE:
             i_scale = 1 << max(0, level - self.yiq_i.levels)
             q_scale = 1 << max(0, level - self.yiq_q.levels)
             for image_pos_y in range(image_height - 1, -1, -1):
+                # The coefficient planes may have different subsampling; map each output row separately.
                 source_y = image_height - 1 - image_pos_y
                 y_row_idx = (source_y // y_scale) * self.yiq_y.width
                 i_row_idx = (source_y // i_scale) * self.yiq_i.width
                 q_row_idx = (source_y // q_scale) * self.yiq_q.width
                 for image_pos_x in range(image_width):
+                    # Replicate a subsampled coefficient across its output pixel footprint.
                     y_idx = y_row_idx + image_pos_x // y_scale
                     i_idx = i_row_idx + image_pos_x // i_scale
                     q_idx = q_row_idx + image_pos_x // q_scale
                     normalized_y_value = (yiq_y_power_data[y_idx] >> normalization_shift) + self.mean
                     normalized_i_value = yiq_i_power_data[i_idx] >> normalization_shift
                     normalized_q_value = yiq_q_power_data[q_idx] >> normalization_shift
+                    # Fixed-point YIQ-to-RGB matrix; clamp each channel to the byte range below.
                     r_value = normalized_y_value + ((normalized_i_value * 979 + normalized_q_value * 636) >> 10)
                     g_value = normalized_y_value + ((normalized_i_value * -279 + normalized_q_value * -662) >> 10)
                     b_value = normalized_y_value + ((normalized_i_value * -1133 + normalized_q_value * 1744) >> 10)
@@ -149,6 +160,7 @@ class CCodImage:
         return self.decompressed_image
 
     def start_generate_image(self):
+        """Parse the file and initialize buffers before the first progressive level."""
         if not self.read_file():
             return False
         if self.encoder_type == 2:
@@ -160,10 +172,12 @@ class CCodImage:
         return True
 
     def end_generate_image(self):
+        """Finish progressive decoding and release plane state."""
         self.end_decompress()
         return True
 
     def generate_image(self, level):
+        """Decode one wavelet level and update the image at that level's resolution."""
         if level == 0:
             self.read_data = 0
         if not Constants.read_bytes_with_off(self.input_cod_file, self.file_buf, self.level_code_size[level], self.read_data):
@@ -178,6 +192,7 @@ class CCodImage:
             return False
         if self.color_type == Constants.COLOR_IMAGE:
             for component in (self.yiq_i, self.yiq_q):
+                # A subsampled plane has fewer effective levels than the luma plane.
                 if level > component.levels:
                     continue
                 self.off = component.decompress(self.file_buf, self.off, level)
@@ -191,6 +206,7 @@ class CCodImage:
 
     @staticmethod
     def _argb_to_rgba(value):
+        """Convert a packed ARGB integer to Pillow's RGBA tuple order."""
         alpha = (value >> 24) & 0xFF
         r = (value >> 16) & 0xFF
         g = (value >> 8) & 0xFF
@@ -202,6 +218,7 @@ class CCodImage:
 
     @classmethod
     def open(cls, cod_image):
+        """Decode every progressive level from a COD file and return the decoder."""
         with open(cod_image, "rb") as input_stream:
             cod = cls(input_stream)
             if cod.start_generate_image():
@@ -216,6 +233,7 @@ class CCodImage:
 
     @staticmethod
     def write_jpg(cod_image, jpg_image):
+        """Decode a COD file and save its final image as JPEG."""
         cod = CCodImage.open(cod_image)
         if Image is None:
             raise RuntimeError("Pillow is required to write JPG output")
