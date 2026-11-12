@@ -236,26 +236,32 @@ class CCodImage:
         """Decode every progressive level from a COD file and return the decoder."""
         with open(cod_image, "rb") as input_stream:
             cod = cls(input_stream)
-            if cod.start_generate_image():
+            if not cod.start_generate_image():
+                raise ValueError(f"Invalid or unsupported COD image: {cod_image}")
+            try:
                 for level in range(cod.wavelet_levels + 1):
-                    cod.generate_image(level)
+                    if not cod.generate_image(level):
+                        raise ValueError(
+                            f"Failed to decode COD image at level {level}: {cod_image}"
+                        )
+            finally:
                 cod.end_generate_image()
             return cod
 
-    @staticmethod
-    def get_image_from_file(cod_image):
-        return CCodImage.open(cod_image)
 
-    @staticmethod
-    def write_image(cod_image, image_file):
-        """Decode a COD file and save its final image using the output extension."""
-        cod = CCodImage.open(cod_image)
-        if Image is None:
-            raise RuntimeError("Pillow is required to write image output")
-        out = Image.new("RGB", (cod.current_width, cod.current_height))
-        if cod.decompressed_image is not None:
-            out.paste(cod.decompressed_image)
-        out.save(image_file)
+def read_image(cod_image):
+    """Decode a COD file and return its final image as a Pillow image."""
+    if Image is None:
+        raise RuntimeError("Pillow is required to read images; install cis-cod[images]")
+    cod = CCodImage.open(cod_image)
+    if cod.decompressed_image is None:
+        raise ValueError(f"COD image could not be decoded: {cod_image}")
+    return cod.decompressed_image
+
+
+def write_image(cod_image, image_file):
+    """Decode a COD file and save its final image using the output extension."""
+    read_image(cod_image).convert("RGB").save(image_file)
 
 
 def main():
@@ -266,7 +272,7 @@ def main():
         outfile = sys.argv[2]
     else:
         outfile = sys.argv[1] + "_decoded.jpg"
-    CCodImage.write_image(sys.argv[1], outfile)
+    write_image(sys.argv[1], outfile)
 
 
 if __name__ == "__main__":

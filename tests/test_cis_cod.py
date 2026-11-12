@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from PIL import Image
 
@@ -9,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
+from cis_cod import read_image, write_image
 from cis_cod.c_cod_image import CCodImage
 
 
@@ -20,7 +22,7 @@ class TestCisCod(unittest.TestCase):
             for extension, expected_format in ((".png", "PNG"), (".jpg", "JPEG")):
                 with self.subTest(extension=extension):
                     output_path = Path(output_dir) / f"decoded{extension}"
-                    CCodImage.write_image(str(cod_path), str(output_path))
+                    write_image(str(cod_path), str(output_path))
 
                     with Image.open(output_path) as output_image:
                         self.assertEqual(output_image.format, expected_format)
@@ -45,12 +47,25 @@ class TestCisCod(unittest.TestCase):
         cod_path = ROOT / "tests" / "fixtures" / "testimg1.cod"
         png_path = ROOT / "tests" / "fixtures" / "testimg1.png"
 
-        decoded = CCodImage.open(str(cod_path))
+        image = read_image(str(cod_path))
         with Image.open(png_path) as source:
             source_size = source.size
 
-        self.assertIsNotNone(decoded.decompressed_image)
-        self.assertEqual(decoded.decompressed_image.size, source_size)
+        self.assertIsInstance(image, Image.Image)
+        self.assertEqual(image.size, source_size)
+
+    def test_read_image_rejects_invalid_cod_file(self):
+        with tempfile.TemporaryDirectory() as output_dir:
+            cod_path = Path(output_dir) / "invalid.cod"
+            cod_path.write_bytes(b"")
+
+            with self.assertRaisesRegex(ValueError, "Invalid or unsupported COD image"):
+                read_image(str(cod_path))
+
+    def test_read_image_requires_pillow(self):
+        with patch("cis_cod.c_cod_image.Image", None):
+            with self.assertRaisesRegex(RuntimeError, "Pillow is required"):
+                read_image("image.cod")
 
     def test_subsampled_chroma_image_decodes(self):
         cod_path = ROOT / "tests" / "fixtures" / "testimg3.cod"
