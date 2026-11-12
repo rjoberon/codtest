@@ -10,8 +10,10 @@ except Exception:  # pragma: no cover
 from .binary import read_bytes_with_off, read_dword, read_one_byte, read_word, skip
 from .cyiq import CYIQ
 
+GRAY_IMAGE = 0
 COLOR_IMAGE = 1
 BI_WAVELET = 1
+ARITHMETIC = 1
 ARITHMETIC_LOSSLESS = 2
 SISD = 1
 TABLE_QUANTIZATION = 1
