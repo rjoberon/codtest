@@ -10,11 +10,17 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
+import cis_cod
 from cis_cod import read_image, write_image
 from cis_cod.c_cod_image import CCodImage
 
 
 class TestCisCod(unittest.TestCase):
+    def test_package_exports_only_image_api(self):
+        self.assertEqual(cis_cod.__all__, ["CCodImage", "read_image", "write_image"])
+        self.assertFalse(hasattr(cis_cod, "CCode"))
+        self.assertFalse(hasattr(cis_cod, "CYIQ"))
+
     def test_write_image_uses_output_extension(self):
         cod_path = ROOT / "tests" / "fixtures" / "testimg1.cod"
 

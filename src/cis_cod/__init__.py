@@ -1,9 +1,6 @@
 """Reader for legacy CIS/COD images."""
 
-from .c_code import CCode
-from .cyiq import CYIQ
-
-__all__ = ["CCodImage", "CCode", "CYIQ", "read_image", "write_image"]
+__all__ = ["CCodImage", "read_image", "write_image"]
 
 
 def __getattr__(name):

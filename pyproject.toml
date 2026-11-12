@@ -9,6 +9,9 @@ description = "Read legacy CIS/COD images"
 readme = "README.md"
 requires-python = ">=3.9"
 
+[project.scripts]
+cis-cod = "cis_cod.c_cod_image:main"
+
 [project.optional-dependencies]
 images = ["Pillow>=9"]
 test = ["Pillow>=9", "pytest>=7"]

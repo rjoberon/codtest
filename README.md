@@ -19,6 +19,15 @@ python -m pip install ".[images]"
 Pillow is optional. Install the `images` extra to use `read_image()` or write
 image files. Without Pillow, the lower-level decoder remains available.
 
+After installation, decode an image from the command line:
+
+```bash
+cis-cod image.cod image.jpg
+```
+
+The output filename is optional; when omitted, the command writes
+`image.cod_decoded.jpg`. Pillow must be installed for image output.
+
 ## Usage
 
 ```python
@@ -52,9 +61,6 @@ installing the package, use:
 ```bash
 PYTHONPATH=src python -m cis_cod.c_cod_image image.cod image.jpg
 ```
-
-The output filename is optional; when omitted, the command writes
-`image.cod_decoded.jpg`. Pillow must be installed for image output.
 
 ## Development
 
