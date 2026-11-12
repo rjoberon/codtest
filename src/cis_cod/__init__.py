@@ -1,4 +1,4 @@
-"""Python port of the Lightning Strike COD-image decoder."""
+"""Reader for legacy CIS/COD images."""
 
 from .c_code import CCode
 from .cyiq import CYIQ

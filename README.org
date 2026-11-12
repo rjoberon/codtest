@@ -1,7 +1,0 @@
-Java-Quellcode eines Applets zum Darstellen von CIS/COD-Bildern.
-
-Einschränkungen:
-- Nur Version 3.0 ("CIS3.0").
-- Auch da klappen nicht alle Bilder, weil eingelesene Werte, die als
-  Array-Index verwendet werden, zu groß sind. Das könnte an der
-  Byte-zu-Zahl-Konvertierung liegen.

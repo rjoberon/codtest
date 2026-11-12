@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cis-cod"
+version = "0.1.0"
+description = "Read legacy CIS/COD images"
+readme = "README.md"
+requires-python = ">=3.9"
+
+[project.optional-dependencies]
+images = ["Pillow>=9"]
+test = ["Pillow>=9", "pytest>=7"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
