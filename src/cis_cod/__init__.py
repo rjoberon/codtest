@@ -2,9 +2,8 @@
 
 from .c_code import CCode
 from .cyiq import CYIQ
-from .constants import Constants
 
-__all__ = ["CCodImage", "CCode", "CYIQ", "Constants"]
+__all__ = ["CCodImage", "CCode", "CYIQ"]
 
 
 def __getattr__(name):
