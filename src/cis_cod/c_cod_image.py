@@ -239,15 +239,15 @@ class CCodImage:
         return CCodImage.open(cod_image)
 
     @staticmethod
-    def write_jpg(cod_image, jpg_image):
-        """Decode a COD file and save its final image as JPEG."""
+    def write_image(cod_image, image_file):
+        """Decode a COD file and save its final image using the output extension."""
         cod = CCodImage.open(cod_image)
         if Image is None:
-            raise RuntimeError("Pillow is required to write JPG output")
+            raise RuntimeError("Pillow is required to write image output")
         out = Image.new("RGB", (cod.current_width, cod.current_height))
         if cod.decompressed_image is not None:
             out.paste(cod.decompressed_image)
-        out.save(jpg_image, format="JPEG")
+        out.save(image_file)
 
 
 def main():
@@ -258,7 +258,7 @@ def main():
         outfile = sys.argv[2]
     else:
         outfile = sys.argv[1] + "_decoded.jpg"
-    CCodImage.write_jpg(sys.argv[1], outfile)
+    CCodImage.write_image(sys.argv[1], outfile)
 
 
 if __name__ == "__main__":

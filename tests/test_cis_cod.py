@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+import tempfile
 import unittest
 
 from PIL import Image
@@ -12,6 +13,18 @@ from cis_cod.c_cod_image import CCodImage
 
 
 class TestCisCod(unittest.TestCase):
+    def test_write_image_uses_output_extension(self):
+        cod_path = ROOT / "tests" / "fixtures" / "testimg1.cod"
+
+        with tempfile.TemporaryDirectory() as output_dir:
+            for extension, expected_format in ((".png", "PNG"), (".jpg", "JPEG")):
+                with self.subTest(extension=extension):
+                    output_path = Path(output_dir) / f"decoded{extension}"
+                    CCodImage.write_image(str(cod_path), str(output_path))
+
+                    with Image.open(output_path) as output_image:
+                        self.assertEqual(output_image.format, expected_format)
+
     def test_cod_images_match_decompressed_references(self):
         for i in range(2, 5):
             cod_path = ROOT / "tests" / "fixtures" / f"testimg{i}.cod"

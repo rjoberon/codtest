@@ -17,7 +17,7 @@ python -m pip install ".[images]"
 ```
 
 Pillow is optional. Without it, the decoder can read the image data, but it
-does not create a Pillow image or write JPEG output.
+does not create a Pillow image or write image files.
 
 ## Usage
 
@@ -29,12 +29,13 @@ image = decoded.decompressed_image
 image.save("image.png")
 ```
 
-To save a JPEG directly:
+To save an image directly, the output format is selected from the filename
+extension supported by Pillow:
 
 ```python
 from cis_cod import CCodImage
 
-CCodImage.write_jpg("image.cod", "image.jpg")
+CCodImage.write_image("image.cod", "image.png")
 ```
 
 To run the module's command-line entry point from the repository root without
@@ -45,7 +46,7 @@ PYTHONPATH=src python -m cis_cod.c_cod_image image.cod image.jpg
 ```
 
 The output filename is optional; when omitted, the command writes
-`image.cod_decoded.jpg`. Pillow must be installed for JPEG output.
+`image.cod_decoded.jpg`. Pillow must be installed for image output.
 
 ## Development
 
