@@ -8,7 +8,7 @@ except Exception:  # pragma: no cover
     Image = None
 
 from .binary import read_bytes_with_off, read_dword, read_one_byte, read_word, skip
-from .cyiq import CYIQ
+from .wavelet_plane import WaveletPlaneDecoder
 
 GRAY_IMAGE = 0
 COLOR_IMAGE = 1
@@ -19,16 +19,16 @@ SISD = 1
 TABLE_QUANTIZATION = 1
 
 
-class CCodImage:
+class CodImageDecoder:
     """Read and progressively decode a CIS 3.0 wavelet-compressed image."""
 
     def __init__(self, input_cod_file: BinaryIO):
         self.width = 300
         self.height = 200
         self.magic_marker = bytearray(8)
-        self.yiq_y = CYIQ()
-        self.yiq_i = CYIQ()
-        self.yiq_q = CYIQ()
+        self.yiq_y = WaveletPlaneDecoder()
+        self.yiq_i = WaveletPlaneDecoder()
+        self.yiq_q = WaveletPlaneDecoder()
         self.input_cod_file = input_cod_file
         self.decompressed_image = None
         self.compression_type = 0
@@ -253,7 +253,7 @@ def read_image(cod_image):
     """Decode a COD file and return its final image as a Pillow image."""
     if Image is None:
         raise RuntimeError("Pillow is required to read images; install cis-cod[images]")
-    cod = CCodImage.open(cod_image)
+    cod = CodImageDecoder.open(cod_image)
     if cod.decompressed_image is None:
         raise ValueError(f"COD image could not be decoded: {cod_image}")
     return cod.decompressed_image
@@ -267,7 +267,7 @@ def write_image(cod_image, image_file):
 def main():
     import sys
     if len(sys.argv) < 2:
-        raise SystemExit("usage: c_cod_image.py <infile>")
+        raise SystemExit("usage: cis-cod <infile> [outfile]")
     if len(sys.argv) > 2:
         outfile = sys.argv[2]
     else:

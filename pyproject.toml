@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 
 [project.scripts]
-cis-cod = "cis_cod.c_cod_image:main"
+cis-cod = "cis_cod.cod_image:main"
 
 [project.optional-dependencies]
 images = ["Pillow>=9"]

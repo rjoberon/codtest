@@ -1,14 +1,14 @@
 """Reader for legacy CIS/COD images."""
 
-__all__ = ["CCodImage", "read_image", "write_image"]
+__all__ = ["CodImageDecoder", "read_image", "write_image"]
 
 
 def __getattr__(name):
-	if name in {"CCodImage", "read_image", "write_image"}:
-		from .c_cod_image import CCodImage, read_image, write_image
+	if name in {"CodImageDecoder", "read_image", "write_image"}:
+		from .cod_image import CodImageDecoder, read_image, write_image
 
 		return {
-			"CCodImage": CCodImage,
+			"CodImageDecoder": CodImageDecoder,
 			"read_image": read_image,
 			"write_image": write_image,
 		}[name]

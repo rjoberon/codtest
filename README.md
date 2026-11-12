@@ -37,12 +37,12 @@ image = read_image("image.cod")
 image.save("image.png")
 ```
 
-For access to decoder metadata and lower-level decoding controls, use `CCodImage`:
+For access to decoder metadata and lower-level decoding controls, use `CodImageDecoder`:
 
 ```python
-from cis_cod import CCodImage
+from cis_cod import CodImageDecoder
 
-decoded = CCodImage.open("image.cod")
+decoded = CodImageDecoder.open("image.cod")
 image = decoded.decompressed_image
 ```
 
@@ -59,7 +59,7 @@ To run the module's command-line entry point from the repository root without
 installing the package, use:
 
 ```bash
-PYTHONPATH=src python -m cis_cod.c_cod_image image.cod image.jpg
+PYTHONPATH=src python -m cis_cod.cod_image image.cod image.jpg
 ```
 
 ## Development

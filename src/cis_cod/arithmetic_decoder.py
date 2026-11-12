@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-class CCode:
+class ArithmeticDecoder:
     Code_value_bits = 16
     Top_value = (1 << Code_value_bits) - 1
     First_qtr = (Top_value // 4) + 1
@@ -12,15 +12,15 @@ class CCode:
     DECODE_ERR = -9999
 
     def __init__(self):
-        self.no_of_chars = CCode.No_of_chars
-        self.no_of_symbols = CCode.No_of_symbols
-        self.eof_symbol = CCode.EOF_symbol
+        self.no_of_chars = ArithmeticDecoder.No_of_chars
+        self.no_of_symbols = ArithmeticDecoder.No_of_symbols
+        self.eof_symbol = ArithmeticDecoder.EOF_symbol
         self.max_frequency = 8192
         self.model_delta = 10
-        self.char_to_index = [0] * CCode.No_of_chars
-        self.index_to_char = [0] * (CCode.No_of_symbols + 1)
-        self.freq = [0] * (CCode.No_of_symbols + 1)
-        self.cum_freq = [0] * (CCode.No_of_symbols + 1)
+        self.char_to_index = [0] * ArithmeticDecoder.No_of_chars
+        self.index_to_char = [0] * (ArithmeticDecoder.No_of_symbols + 1)
+        self.freq = [0] * (ArithmeticDecoder.No_of_symbols + 1)
+        self.cum_freq = [0] * (ArithmeticDecoder.No_of_symbols + 1)
         self.i_buf = b""
         self.o_buf = b""
         self.i_buf_index = 0
@@ -36,7 +36,7 @@ class CCode:
     def init(self, no_of_chars):
         if no_of_chars > 255:
             raise ValueError("Warning: Number of characters is larger than 255. Only the 8 LSB will be used. Could mean that decoder will not work correctly.")
-        if no_of_chars > CCode.No_of_chars:
+        if no_of_chars > ArithmeticDecoder.No_of_chars:
             raise ValueError("Number of characters is larger than the maximum number of characters allowed.")
         self.max_frequency = 8192
         if no_of_chars == 1:
@@ -65,7 +65,7 @@ class CCode:
             decode_symbol = self.decode_symbol(self.cum_freq)
             if decode_symbol == self.eof_symbol:
                 break
-            if decode_symbol == CCode.DECODE_ERR:
+            if decode_symbol == ArithmeticDecoder.DECODE_ERR:
                 break
             current_byte = self.index_to_char[decode_symbol]
             # Convert back to a signed byte after removing the median offset.
@@ -88,8 +88,8 @@ class CCode:
                 # The arithmetic coder permits a limited number of padding bits after the input ends.
                 self.buffer = 255
                 self.garbage_bits += 1
-                if self.garbage_bits > (CCode.Code_value_bits - 2):
-                    return CCode.DECODE_ERR
+                if self.garbage_bits > (ArithmeticDecoder.Code_value_bits - 2):
+                    return ArithmeticDecoder.DECODE_ERR
             else:
                 self.buffer = self.i_buf[self.i_buf_index]
                 self.i_buf_index += 1
@@ -106,7 +106,7 @@ class CCode:
         for _ in range(16):
             self.value = (2 * self.value + (self.input_bit() & 0x1)) & 0xFFFF
         self.low = 0
-        self.high = CCode.Top_value
+        self.high = ArithmeticDecoder.Top_value
         return True
 
     def decode_symbol(self, current_cum_freq):
@@ -126,27 +126,27 @@ class CCode:
         self.low = self.low + (range_size * current_cum_freq[current_symbol_index] // total_cum_freq)
         # Renormalize with the E1, E2, and E3 mappings described in the paper.
         while True:
-            if self.high < CCode.Half:
+            if self.high < ArithmeticDecoder.Half:
                 # E1: the interval lies in the lower half.
                 pass
-            elif self.low >= CCode.Half:
+            elif self.low >= ArithmeticDecoder.Half:
                 # E2: the interval lies in the upper half.
-                self.value -= CCode.Half
-                self.low -= CCode.Half
-                self.high -= CCode.Half
-            elif self.low >= CCode.First_qtr and self.high < CCode.Third_qtr:
+                self.value -= ArithmeticDecoder.Half
+                self.low -= ArithmeticDecoder.Half
+                self.high -= ArithmeticDecoder.Half
+            elif self.low >= ArithmeticDecoder.First_qtr and self.high < ArithmeticDecoder.Third_qtr:
                 # E3: the interval lies in the middle half.
-                self.value -= CCode.First_qtr
-                self.low -= CCode.First_qtr
-                self.high -= CCode.First_qtr
+                self.value -= ArithmeticDecoder.First_qtr
+                self.low -= ArithmeticDecoder.First_qtr
+                self.high -= ArithmeticDecoder.First_qtr
             else:
                 break
             # Apply the scale transformation and bring in the next input bit.
             self.low = 2 * self.low
             self.high = 2 * self.high + 1
             next_bit = self.input_bit()
-            if next_bit == CCode.DECODE_ERR:
-                return CCode.DECODE_ERR
+            if next_bit == ArithmeticDecoder.DECODE_ERR:
+                return ArithmeticDecoder.DECODE_ERR
             self.value = 2 * self.value + (next_bit & 0x1)
         return current_symbol_index
 

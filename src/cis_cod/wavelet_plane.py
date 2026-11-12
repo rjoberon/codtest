@@ -3,7 +3,7 @@ from __future__ import annotations
 from array import array
 
 from .binary import get_word, read_one_byte
-from .c_code import CCode
+from .arithmetic_decoder import ArithmeticDecoder
 
 MAX_SUBBANDS = 31
 ZERO_TREE_NODE = -126
@@ -22,9 +22,9 @@ def s16(value: int) -> int:
     return value - 0x10000 if value >= 0x8000 else value
 
 
-class CYIQ:
+class WaveletPlaneDecoder:
     def __init__(self):
-        self.codec = CCode()
+        self.codec = ArithmeticDecoder()
         self.level_data_size = [0] * 11
         self.quantizer = array('h', [0]) * MAX_SUBBANDS
         self.mask_quantizer = array('h', [0]) * MAX_SUBBANDS

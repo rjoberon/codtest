@@ -13,7 +13,7 @@ if str(ROOT / "src") not in sys.path:
 
 import cis_cod
 from cis_cod import read_image, write_image
-from cis_cod.c_cod_image import CCodImage
+from cis_cod.cod_image import CodImageDecoder
 
 
 def _image_rmse(image, reference):
@@ -24,9 +24,9 @@ def _image_rmse(image, reference):
 
 class TestCisCod(unittest.TestCase):
     def test_package_exports_only_image_api(self):
-        self.assertEqual(cis_cod.__all__, ["CCodImage", "read_image", "write_image"])
-        self.assertFalse(hasattr(cis_cod, "CCode"))
-        self.assertFalse(hasattr(cis_cod, "CYIQ"))
+        self.assertEqual(cis_cod.__all__, ["CodImageDecoder", "read_image", "write_image"])
+        self.assertFalse(hasattr(cis_cod, "ArithmeticDecoder"))
+        self.assertFalse(hasattr(cis_cod, "WaveletPlaneDecoder"))
 
     def test_write_image_uses_output_extension(self):
         cod_path = ROOT / "tests" / "fixtures" / "testimg1.cod"
@@ -90,7 +90,7 @@ class TestCisCod(unittest.TestCase):
                 read_image(str(cod_path))
 
     def test_read_image_requires_pillow(self):
-        with patch("cis_cod.c_cod_image.Image", None):
+        with patch("cis_cod.cod_image.Image", None):
             with self.assertRaisesRegex(RuntimeError, "Pillow is required"):
                 read_image("image.cod")
 
@@ -98,7 +98,7 @@ class TestCisCod(unittest.TestCase):
         cod_path = ROOT / "tests" / "fixtures" / "testimg3.cod"
         png_path = ROOT / "tests" / "fixtures" / "testimg3_decompressed.png"
 
-        decoded = CCodImage.open(str(cod_path))
+        decoded = CodImageDecoder.open(str(cod_path))
         with Image.open(png_path) as expected:
             expected_size = expected.size
 
