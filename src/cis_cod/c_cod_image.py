@@ -7,8 +7,16 @@ try:
 except Exception:  # pragma: no cover
     Image = None
 
-from .constants import Constants
+from .binary import read_bytes_with_off, read_dword, read_one_byte, read_word, skip
 from .cyiq import CYIQ
+
+GRAY_IMAGE = 0
+COLOR_IMAGE = 1
+BI_WAVELET = 1
+ARITHMETIC = 1
+ARITHMETIC_LOSSLESS = 2
+SISD = 1
+TABLE_QUANTIZATION = 1
 
 
 class CCodImage:
@@ -57,44 +65,44 @@ class CCodImage:
         # This decoder supports the CIS 3.0 marker only.
         if magic_marker[3:4] != b"3" or magic_marker[5:6] != b"0":
             raise RuntimeError("Version incompatible!")
-        self.header_size = Constants.read_word(self.input_cod_file)
-        self.coded_size = Constants.read_dword(self.input_cod_file)
-        self.comment_size = Constants.read_word(self.input_cod_file)
+        self.header_size = read_word(self.input_cod_file)
+        self.coded_size = read_dword(self.input_cod_file)
+        self.comment_size = read_word(self.input_cod_file)
         self.file_buf = bytearray(self.coded_size)
-        self.image_width = Constants.read_word(self.input_cod_file)
-        self.image_height = Constants.read_word(self.input_cod_file)
-        self.bpp = Constants.read_one_byte(self.input_cod_file)
-        self.color_type = Constants.read_one_byte(self.input_cod_file)
-        if not Constants.skip(self.input_cod_file, 2):
+        self.image_width = read_word(self.input_cod_file)
+        self.image_height = read_word(self.input_cod_file)
+        self.bpp = read_one_byte(self.input_cod_file)
+        self.color_type = read_one_byte(self.input_cod_file)
+        if not skip(self.input_cod_file, 2):
             return False
-        self.encoder_type = Constants.read_one_byte(self.input_cod_file)
-        if self.encoder_type == Constants.ARITHMETIC_LOSSLESS:
+        self.encoder_type = read_one_byte(self.input_cod_file)
+        if self.encoder_type == ARITHMETIC_LOSSLESS:
             raise RuntimeError("This version can not decompress Loss-Less compressed image")
-        self.compression_type = Constants.read_one_byte(self.input_cod_file)
-        if self.compression_type != Constants.BI_WAVELET:
+        self.compression_type = read_one_byte(self.input_cod_file)
+        if self.compression_type != BI_WAVELET:
             return False
-        self.quantizer_type = Constants.read_one_byte(self.input_cod_file)
-        if self.quantizer_type != Constants.TABLE_QUANTIZATION:
+        self.quantizer_type = read_one_byte(self.input_cod_file)
+        if self.quantizer_type != TABLE_QUANTIZATION:
             return False
-        self.scb = Constants.read_one_byte(self.input_cod_file)
-        if self.scb != Constants.SISD:
+        self.scb = read_one_byte(self.input_cod_file)
+        if self.scb != SISD:
             return False
-        self.color_type_value = Constants.read_one_byte(self.input_cod_file)
-        self.wavelet_levels = Constants.read_one_byte(self.input_cod_file)
+        self.color_type_value = read_one_byte(self.input_cod_file)
+        self.wavelet_levels = read_one_byte(self.input_cod_file)
         self.level_code_size = [0] * (self.wavelet_levels + 1)
         for i in range(self.wavelet_levels + 1):
-            self.level_code_size[i] = Constants.read_dword(self.input_cod_file)
+            self.level_code_size[i] = read_dword(self.input_cod_file)
         self.adjust_width_height()
         # Each component reads its own subsampling metadata, which determines its coefficient-buffer size.
         self.yiq_y.read_file(self.input_cod_file)
-        if self.color_type == Constants.COLOR_IMAGE:
+        if self.color_type == COLOR_IMAGE:
             self.yiq_i.read_file(self.input_cod_file)
             self.yiq_q.read_file(self.input_cod_file)
         header_bytes_read = self.input_cod_file.tell() - header_start
         if header_bytes_read > self.header_size:
             return False
         # Some 3.0 files have reserved bytes after the plane metadata; payload data starts at header_size.
-        if not Constants.skip(self.input_cod_file, self.header_size - header_bytes_read):
+        if not skip(self.input_cod_file, self.header_size - header_bytes_read):
             return False
         return True
 
@@ -109,7 +117,7 @@ class CCodImage:
         self.adjust_width_height()
         if not self.yiq_y.init_decompress(self.width, self.height, self.wavelet_levels):
             return False
-        if self.color_type == Constants.COLOR_IMAGE:
+        if self.color_type == COLOR_IMAGE:
             if not self.yiq_i.init_decompress(self.width, self.height, self.wavelet_levels):
                 return False
             if not self.yiq_q.init_decompress(self.width, self.height, self.wavelet_levels):
@@ -119,7 +127,7 @@ class CCodImage:
     def end_decompress(self):
         """Release per-plane decoder state after all levels have been generated."""
         self.yiq_y.end_decompress()
-        if self.color_type == Constants.COLOR_IMAGE:
+        if self.color_type == COLOR_IMAGE:
             self.yiq_i.end_decompress()
             self.yiq_q.end_decompress()
 
@@ -127,7 +135,7 @@ class CCodImage:
         """Convert the current YIQ level into ARGB pixels in the output buffer."""
         normalization_shift = self.wavelet_levels - level
         y_scale = 1 << max(0, level - self.yiq_y.levels)
-        if self.color_type == Constants.COLOR_IMAGE:
+        if self.color_type == COLOR_IMAGE:
             i_scale = 1 << max(0, level - self.yiq_i.levels)
             q_scale = 1 << max(0, level - self.yiq_q.levels)
             for image_pos_y in range(image_height - 1, -1, -1):
@@ -187,7 +195,7 @@ class CCodImage:
         """Decode one wavelet level and update the image at that level's resolution."""
         if level == 0:
             self.read_data = 0
-        if not Constants.read_bytes_with_off(self.input_cod_file, self.file_buf, self.level_code_size[level], self.read_data):
+        if not read_bytes_with_off(self.input_cod_file, self.file_buf, self.level_code_size[level], self.read_data):
             return False
         self.read_data += self.level_code_size[level]
         self.mean = self.yiq_y.mean
@@ -197,7 +205,7 @@ class CCodImage:
         self.off = self.yiq_y.decompress(self.file_buf, self.off, level)
         if self.off == -1:
             return False
-        if self.color_type == Constants.COLOR_IMAGE:
+        if self.color_type == COLOR_IMAGE:
             for component in (self.yiq_i, self.yiq_q):
                 # A subsampled plane has fewer effective levels than the luma plane.
                 if level > component.levels:
@@ -228,26 +236,32 @@ class CCodImage:
         """Decode every progressive level from a COD file and return the decoder."""
         with open(cod_image, "rb") as input_stream:
             cod = cls(input_stream)
-            if cod.start_generate_image():
+            if not cod.start_generate_image():
+                raise ValueError(f"Invalid or unsupported COD image: {cod_image}")
+            try:
                 for level in range(cod.wavelet_levels + 1):
-                    cod.generate_image(level)
+                    if not cod.generate_image(level):
+                        raise ValueError(
+                            f"Failed to decode COD image at level {level}: {cod_image}"
+                        )
+            finally:
                 cod.end_generate_image()
             return cod
 
-    @staticmethod
-    def get_image_from_file(cod_image):
-        return CCodImage.open(cod_image)
 
-    @staticmethod
-    def write_image(cod_image, image_file):
-        """Decode a COD file and save its final image using the output extension."""
-        cod = CCodImage.open(cod_image)
-        if Image is None:
-            raise RuntimeError("Pillow is required to write image output")
-        out = Image.new("RGB", (cod.current_width, cod.current_height))
-        if cod.decompressed_image is not None:
-            out.paste(cod.decompressed_image)
-        out.save(image_file)
+def read_image(cod_image):
+    """Decode a COD file and return its final image as a Pillow image."""
+    if Image is None:
+        raise RuntimeError("Pillow is required to read images; install cis-cod[images]")
+    cod = CCodImage.open(cod_image)
+    if cod.decompressed_image is None:
+        raise ValueError(f"COD image could not be decoded: {cod_image}")
+    return cod.decompressed_image
+
+
+def write_image(cod_image, image_file):
+    """Decode a COD file and save its final image using the output extension."""
+    read_image(cod_image).convert("RGB").save(image_file)
 
 
 def main():
@@ -258,7 +272,7 @@ def main():
         outfile = sys.argv[2]
     else:
         outfile = sys.argv[1] + "_decoded.jpg"
-    CCodImage.write_image(sys.argv[1], outfile)
+    write_image(sys.argv[1], outfile)
 
 
 if __name__ == "__main__":

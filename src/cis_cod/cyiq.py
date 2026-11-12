@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from array import array
 
+from .binary import get_word, read_one_byte
 from .c_code import CCode
-from .constants import Constants
+
+MAX_SUBBANDS = 31
+ZERO_TREE_NODE = -126
 
 
 def s16(value: int) -> int:
@@ -23,12 +26,12 @@ class CYIQ:
     def __init__(self):
         self.codec = CCode()
         self.level_data_size = [0] * 11
-        self.quantizer = array('h', [0]) * Constants.MAX_SUBBANDS
-        self.mask_quantizer = array('h', [0]) * Constants.MAX_SUBBANDS
-        self.threshold = array('h', [0]) * Constants.MAX_SUBBANDS
-        self.mask_threshold = array('h', [0]) * Constants.MAX_SUBBANDS
-        self.min = array('h', [0]) * Constants.MAX_SUBBANDS
-        self.max = array('h', [0]) * Constants.MAX_SUBBANDS
+        self.quantizer = array('h', [0]) * MAX_SUBBANDS
+        self.mask_quantizer = array('h', [0]) * MAX_SUBBANDS
+        self.threshold = array('h', [0]) * MAX_SUBBANDS
+        self.mask_threshold = array('h', [0]) * MAX_SUBBANDS
+        self.min = array('h', [0]) * MAX_SUBBANDS
+        self.max = array('h', [0]) * MAX_SUBBANDS
         self.width = 0
         self.height = 0
         self.levels = 5
@@ -40,11 +43,11 @@ class CYIQ:
 
     def input_begin_of_block(self, cod_data, n, n2):
         idx = 3 * (self.levels - n) + n2
-        self.max[idx] = Constants.get_word(cod_data, self.cod_pointer)
+        self.max[idx] = get_word(cod_data, self.cod_pointer)
         self.cod_pointer += 2
-        self.min[idx] = Constants.get_word(cod_data, self.cod_pointer)
+        self.min[idx] = get_word(cod_data, self.cod_pointer)
         self.cod_pointer += 2
-        self.quantizer[idx] = Constants.get_word(cod_data, self.cod_pointer)
+        self.quantizer[idx] = get_word(cod_data, self.cod_pointer)
         self.cod_pointer += 2
 
     def input_end_of_block(self, cod_data):
@@ -59,9 +62,9 @@ class CYIQ:
             self.cod_pointer += 1
 
     def read_file(self, input_stream):
-        self.zero_levels = Constants.read_one_byte(input_stream)
+        self.zero_levels = read_one_byte(input_stream)
         # This plane's subsampling flag controls its width, height, and coefficient-buffer size.
-        self.sub_samples = Constants.read_one_byte(input_stream)
+        self.sub_samples = read_one_byte(input_stream)
         return True
 
     def init_decompress(self, width, height, wavelet_levels):
@@ -187,7 +190,7 @@ class CYIQ:
             coefficient_index = subband_start_indices[n2]
             for subband_row_index in range(subband_height):
                 for subband_column_index in range(subband_width):
-                    if yiq_p[coefficient_index] == Constants.ZEROTREENODE:
+                    if yiq_p[coefficient_index] == ZERO_TREE_NODE:
                         yiq_p[coefficient_index] = 0
                         coefficient_index += 1
                     else:
@@ -199,7 +202,7 @@ class CYIQ:
                                 coefficient_row=subband_row_index + subband_row_offsets[n2],
                                 coefficient_column=subband_column_index + subband_column_offsets[n2],
                                 start_level=n,
-                                zero_tree_marker=Constants.ZEROTREENODE,
+                                zero_tree_marker=ZERO_TREE_NODE,
                                 stop_level=self.levels - self.zero_levels,
                             )
                             yiq_p[coefficient_index] = 0

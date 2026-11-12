@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 class CCode:
     Code_value_bits = 16
     Top_value = (1 << Code_value_bits) - 1

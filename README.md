@@ -16,26 +16,34 @@ Install the package and its optional Pillow integration from a checkout:
 python -m pip install ".[images]"
 ```
 
-Pillow is optional. Without it, the decoder can read the image data, but it
-does not create a Pillow image or write image files.
+Pillow is optional. Install the `images` extra to use `read_image()` or write
+image files. Without Pillow, the lower-level decoder remains available.
 
 ## Usage
+
+```python
+from cis_cod import read_image
+
+image = read_image("image.cod")
+image.save("image.png")
+```
+
+For access to decoder metadata and lower-level decoding controls, use `CCodImage`:
 
 ```python
 from cis_cod import CCodImage
 
 decoded = CCodImage.open("image.cod")
 image = decoded.decompressed_image
-image.save("image.png")
 ```
 
 To save an image directly, the output format is selected from the filename
 extension supported by Pillow:
 
 ```python
-from cis_cod import CCodImage
+from cis_cod import write_image
 
-CCodImage.write_image("image.cod", "image.png")
+write_image("image.cod", "image.png")
 ```
 
 To run the module's command-line entry point from the repository root without

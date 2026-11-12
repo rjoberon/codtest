@@ -2,14 +2,17 @@
 
 from .c_code import CCode
 from .cyiq import CYIQ
-from .constants import Constants
 
-__all__ = ["CCodImage", "CCode", "CYIQ", "Constants"]
+__all__ = ["CCodImage", "CCode", "CYIQ", "read_image", "write_image"]
 
 
 def __getattr__(name):
-	if name == "CCodImage":
-		from .c_cod_image import CCodImage
+	if name in {"CCodImage", "read_image", "write_image"}:
+		from .c_cod_image import CCodImage, read_image, write_image
 
-		return CCodImage
+		return {
+			"CCodImage": CCodImage,
+			"read_image": read_image,
+			"write_image": write_image,
+		}[name]
 	raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
