@@ -37,6 +37,16 @@ from cis_cod import CCodImage
 CCodImage.write_jpg("image.cod", "image.jpg")
 ```
 
+To run the module's command-line entry point from the repository root without
+installing the package, use:
+
+```bash
+PYTHONPATH=src python -m cis_cod.c_cod_image image.cod image.jpg
+```
+
+The output filename is optional; when omitted, the command writes
+`image.cod_decoded.jpg`. Pillow must be installed for JPEG output.
+
 ## Development
 
 Install the test dependencies and run the test suite:
