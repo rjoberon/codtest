@@ -48,6 +48,7 @@ class CYIQ:
         self.cod_pointer += 2
 
     def input_end_of_block(self, cod_data):
+        """The end of blocks is marked by the ASCII sequence 'cod'"""
         if cod_data[self.cod_pointer:self.cod_pointer + 3] == b"cod":
             self.cod_pointer += 3
             return

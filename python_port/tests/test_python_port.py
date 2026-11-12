@@ -14,18 +14,20 @@ from lightningstrike.c_cod_image import CCodImage
 class TestPythonPort(unittest.TestCase):
     def test_cod_image_matches_reference_png(self):
         base_dir = Path(__file__).resolve().parents[2]
-        cod_path = base_dir / "src" / "test" / "resources" / "testimg1.cod"
-        png_path = base_dir / "src" / "test" / "resources" / "testimg1.png"
 
-        decoded = CCodImage.open(str(cod_path))
-        actual = decoded.decompressed_image.convert("RGBA")
-        expected = Image.open(png_path).convert("RGBA")
+        for i in range(1, 5):
+            cod_path = base_dir / "src" / "test" / "resources" / ("testimg" + i + ".cod")
+            png_path = base_dir / "src" / "test" / "resources" / ("testimg" + i + ".png")
 
-        self.assertIsNotNone(actual)
-        self.assertEqual(actual.size, expected.size)
+            decoded = CCodImage.open(str(cod_path))
+            actual = decoded.decompressed_image.convert("RGBA")
+            expected = Image.open(png_path).convert("RGBA")
 
-        for actual_pixel, expected_pixel in zip(actual.getdata(), expected.getdata()):
-            self.assertEqual(actual_pixel, expected_pixel)
+            self.assertIsNotNone(actual)
+            self.assertEqual(actual.size, expected.size)
+
+            for actual_pixel, expected_pixel in zip(actual.getdata(), expected.getdata()):
+                self.assertEqual(actual_pixel, expected_pixel)
 
     def test_subsampled_chroma_image_decodes(self):
         base_dir = Path(__file__).resolve().parents[2]
