@@ -85,14 +85,14 @@ class CYIQ:
             if not self.data_rearr(o_buf, n, 0):
                 return -1
         elif n < self.levels - self.zero_levels + 1:
-            for n2 in range(3):
-                self.input_begin_of_block(cod_data, n, n2)
+            for subband_index in range(3):
+                self.input_begin_of_block(cod_data, n, subband_index)
                 if n < self.levels - self.zero_levels:
-                    self.cod_pointer = self.codec.decode(cod_data, self.cod_pointer, o_buf, 2 * self.quantizer[3 * (self.levels - n) + n2] + 2)
+                    self.cod_pointer = self.codec.decode(cod_data, self.cod_pointer, o_buf, 2 * self.quantizer[3 * (self.levels - n) + subband_index] + 2)
                 else:
-                    self.cod_pointer = self.codec.decode(cod_data, self.cod_pointer, o_buf, 2 * self.quantizer[3 * (self.levels - n) + n2] + 1)
+                    self.cod_pointer = self.codec.decode(cod_data, self.cod_pointer, o_buf, 2 * self.quantizer[3 * (self.levels - n) + subband_index] + 1)
                 self.input_end_of_block(cod_data)
-                if not self.data_rearr(o_buf, n, n2):
+                if not self.data_rearr(o_buf, n, subband_index):
                     return -1
         if cod_data is None:
             return -1
@@ -102,45 +102,40 @@ class CYIQ:
             return -1
         return self.cod_pointer
 
-    def set_dequantization(self, n, n2, level, direction, count):
+    def set_dequantization(self, band_max, band_min, level, direction, count):
         if count == 0:
-            n = 0.0
-            n2 = 0.0
+            positive_scale = 0.0
+            negative_scale = 0.0
         else:
-            n /= count
-            n2 /= -count
-        n5 = self.width >> (level + 1)
-        n6 = self.height >> (level + 1)
-        n7 = 0
-        n8 = 0
+            positive_scale = band_max / count
+            negative_scale = band_min / -count
+        subband_width = self.width >> (level + 1)
+        subband_height = self.height >> (level + 1)
+        # Direction is an ASCII subband letter; each pair accepts lowercase and uppercase.
         if direction in (76, 108):
-            n7 = 0
-            n8 = 0
+            # L: low-frequency quadrant at the top-left origin.
+            coefficient_index = 0
         elif direction in (72, 104):
-            n7 = n5
-            n8 = n5
+            # H: horizontal-detail quadrant, shifted right by half the width.
+            coefficient_index = subband_width
         elif direction in (86, 118):
-            n7 = n6 * self.width
-            n8 = n6 * self.width
+            # V: vertical-detail quadrant, shifted down by half the height.
+            coefficient_index = subband_height * self.width
         elif direction in (68, 100):
-            n7 = n6 * self.width + n5
-            n8 = n6 * self.width + n5
+            # D: diagonal-detail quadrant, shifted right and down.
+            coefficient_index = subband_height * self.width + subband_width
         else:
-            n7 = 0
-            n8 = 0
-        for n9 in range(n6):
-            n10 = 0
-            while n10 < n5:
-                self.yiq_p[n8] = self.yiq_p[n7]
-                if self.yiq_p[n7] > 0:
-                    self.yiq_p[n8] = s16(self.yiq_p[n7] * n)
-                elif self.yiq_p[n7] < 0:
-                    self.yiq_p[n8] = s16(self.yiq_p[n7] * n2)
-                n7 += 1
-                n8 += 1
-                n10 += 1
-            n7 += self.width - n10
-            n8 += self.width - n10
+            # Unknown directions use the origin, the same offset as L.
+            coefficient_index = 0
+        # Scale the selected subband row by row, skipping the rest of each full-width row.
+        for _ in range(subband_height):
+            for _ in range(subband_width):
+                if self.yiq_p[coefficient_index] > 0:
+                    self.yiq_p[coefficient_index] = s16(self.yiq_p[coefficient_index] * positive_scale)
+                elif self.yiq_p[coefficient_index] < 0:
+                    self.yiq_p[coefficient_index] = s16(self.yiq_p[coefficient_index] * negative_scale)
+                coefficient_index += 1
+            coefficient_index += self.width - subband_width
         return True
 
     def wavelet_dequantization(self, n):
@@ -155,65 +150,85 @@ class CYIQ:
 
     def data_rearr(self, decoded_values, n, n2):
         yiq_p = self.yiq_p
-        n3 = 0
-        n4 = 0
-        array2 = [0, 0, 0]
-        array3 = [0, 0, 0]
-        array4 = [0, 0, 0]
+        decoded_value_index = 0
+        subband_start_indices = [0, 0, 0]
+        subband_row_offsets = [0, 0, 0]
+        subband_column_offsets = [0, 0, 0]
         if n == 0:
-            n5 = self.height >> (self.levels - n)
-            n6 = self.width >> (self.levels - n)
+            subband_height = self.height >> (self.levels - n)
+            subband_width = self.width >> (self.levels - n)
         else:
-            n5 = self.height >> (self.levels - n + 1)
-            n6 = self.width >> (self.levels - n + 1)
-        array2[1] = n6
-        array2[0] = n5 * self.width
-        array2[2] = n5 * self.width + n6
-        array3[1] = 0
-        array4[1] = n6
-        array3[0] = n5
-        array4[0] = 0
-        array3[2] = n5
-        array4[2] = n6
+            subband_height = self.height >> (self.levels - n + 1)
+            subband_width = self.width >> (self.levels - n + 1)
+        # Subbands 0, 1, and 2 occupy the lower-left, upper-right, and lower-right quadrants.
+        # Row and column offsets also give each subband's flattened start index using self.width.
+        subband_start_indices[1] = subband_width
+        subband_start_indices[0] = subband_height * self.width
+        subband_start_indices[2] = subband_height * self.width + subband_width
+        subband_row_offsets[1] = 0
+        subband_column_offsets[1] = subband_width
+        subband_row_offsets[0] = subband_height
+        subband_column_offsets[0] = 0
+        subband_row_offsets[2] = subband_height
+        subband_column_offsets[2] = subband_width
+        # n == 0 is the coarsest low-frequency (LL) band, stored at the buffer origin.
         if n == 0:
-            for n7 in range(n5):
-                for n8 in range(n6):
-                    yiq_p[n3] = s16(decoded_values[n4])
-                    n4 += 1
-                    n3 += 1
-                n3 += self.width - n6
+            coefficient_index = 0
+            for _ in range(subband_height):
+                for _ in range(subband_width):
+                    yiq_p[coefficient_index] = s16(decoded_values[decoded_value_index])
+                    decoded_value_index += 1
+                    coefficient_index += 1
+                coefficient_index += self.width - subband_width
         else:
-            n9 = self.quantizer[3 * (self.levels - n) + n2] + 1
-            n10 = array2[n2]
-            for n11 in range(n5):
-                for n12 in range(n6):
-                    if yiq_p[n10] == Constants.ZEROTREENODE:
-                        yiq_p[n10] = 0
-                        n10 += 1
+            # Higher levels carry detail subbands; skip coefficients already covered by a zero tree.
+            zero_tree_threshold = self.quantizer[3 * (self.levels - n) + n2] + 1
+            coefficient_index = subband_start_indices[n2]
+            for subband_row_index in range(subband_height):
+                for subband_column_index in range(subband_width):
+                    if yiq_p[coefficient_index] == Constants.ZEROTREENODE:
+                        yiq_p[coefficient_index] = 0
+                        coefficient_index += 1
                     else:
-                        yiq_p[n10] = s16(decoded_values[n4])
-                        n4 += 1
-                        if yiq_p[n10] == n9:
-                            self.set_up_zero_tree(n11 + array3[n2], n12 + array4[n2], n, Constants.ZEROTREENODE, self.levels - self.zero_levels)
-                            yiq_p[n10] = 0
-                        n10 += 1
-                n10 += self.width - n6
+                        yiq_p[coefficient_index] = s16(decoded_values[decoded_value_index])
+                        decoded_value_index += 1
+                        if yiq_p[coefficient_index] == zero_tree_threshold:
+                            # This value marks a zero-tree root; mark its descendants and clear it.
+                            self.set_up_zero_tree(
+                                coefficient_row=subband_row_index + subband_row_offsets[n2],
+                                coefficient_column=subband_column_index + subband_column_offsets[n2],
+                                start_level=n,
+                                zero_tree_marker=Constants.ZEROTREENODE,
+                                stop_level=self.levels - self.zero_levels,
+                            )
+                            yiq_p[coefficient_index] = 0
+                        coefficient_index += 1
+                coefficient_index += self.width - subband_width
         return True
 
-    def set_up_zero_tree(self, n, n2, n3, n4, n5):
-        n6 = 2
-        n7 = 2
-        n8 = (n << 1) * self.width + (n2 << 1)
-        for n9 in range(n3, n5):
-            n10 = n8
-            for i in range(n7):
-                for n11 in range(n6):
-                    self.yiq_p[n10] = n4
-                    n10 += 1
-                n10 += self.width - n6
-            n7 <<= 1
-            n6 <<= 1
-            n8 <<= 1
+    def set_up_zero_tree(
+        self, coefficient_row, coefficient_column, start_level, zero_tree_marker, stop_level
+    ):
+        """Mark the descendants of a zero-tree coefficient across wavelet levels.
+
+        Args:
+            coefficient_row: Root coefficient row in the current level's grid.
+            coefficient_column: Root coefficient column in the current level's grid.
+            start_level: First level whose descendants are marked, inclusive.
+            zero_tree_marker: Sentinel value written to each descendant coefficient.
+            stop_level: Exclusive upper bound for the levels to mark.
+        """
+        block_size = 2
+        block_start_index = (coefficient_row << 1) * self.width + (coefficient_column << 1)
+        for _ in range(start_level, stop_level):
+            row_index = block_start_index
+            for _ in range(block_size):
+                for _ in range(block_size):
+                    self.yiq_p[row_index] = zero_tree_marker
+                    row_index += 1
+                row_index += self.width - block_size
+            block_size <<= 1
+            block_start_index <<= 1
 
     def wavelet_reconstruction(self, level):
         region_height = self.height >> (self.levels - level)
@@ -227,64 +242,64 @@ class CYIQ:
 
     def wavelet_recons_t(self, coefficients, region_height, region_width, row_stride):
         workspace = array('h', [0]) * (region_height * region_width)
-        n4 = 0
-        n5 = region_width
-        n6 = 0
-        n7 = (region_height // 2 + 1) * row_stride
-        n8 = n7 - row_stride
-        for n9 in range(region_width):
+        work_current = 0
+        work_next = region_width
+        n6 = 0  # Start of coefficient row 0.
+        n7 = (region_height // 2 + 1) * row_stride  # Start of coefficient row region_height // 2 + 1.
+        n8 = n7 - row_stride  # Start of coefficient row region_height // 2.
+        for _ in range(region_width):
             n10 = coefficients[n8]
-            workspace[n5] = s16(((coefficients[n6] << 1) + coefficients[n7] + n10) >> 2)
-            workspace[n4] = s16(((coefficients[n6] << 1) + coefficients[n7] - (n10 << 2) - n10 - (n10 << 1)) >> 2)
+            workspace[work_next] = s16(((coefficients[n6] << 1) + coefficients[n7] + n10) >> 2)
+            workspace[work_current] = s16(((coefficients[n6] << 1) + coefficients[n7] - (n10 << 2) - n10 - (n10 << 1)) >> 2)
             n6 += 1
             n7 += 1
             n8 += 1
-            n4 += 1
-            n5 += 1
-        n11 = (region_height - 2) * region_width
-        n12 = n11 + region_width
-        n13 = (region_height // 2 - 1) * row_stride
-        n14 = n13 - row_stride
-        n15 = (region_height - 1) * row_stride
-        n16 = n15 - row_stride
-        for n17 in range(region_width):
+            work_current += 1
+            work_next += 1
+        work_current = (region_height - 2) * region_width
+        work_next = work_current + region_width
+        n13 = (region_height // 2 - 1) * row_stride  # Start of coefficient row region_height // 2 - 1.
+        n14 = n13 - row_stride  # Start of coefficient row region_height // 2 - 2.
+        n15 = (region_height - 1) * row_stride  # Start of the last coefficient row.
+        n16 = n15 - row_stride  # Start of the coefficient row before the last.
+        for _ in range(region_width):
             n18 = coefficients[n15]
-            workspace[n12] = s16(((coefficients[n13] << 1) + n18) >> 2)
-            workspace[n11] = s16((s16(coefficients[n13] + coefficients[n14]) >> 2) + (s16((n18 << 1) + coefficients[n16]) >> 3) - n18)
+            workspace[work_next] = s16(((coefficients[n13] << 1) + n18) >> 2)
+            workspace[work_current] = s16((s16(coefficients[n13] + coefficients[n14]) >> 2) + (s16((n18 << 1) + coefficients[n16]) >> 3) - n18)
             n13 += 1
             n14 += 1
             n15 += 1
             n16 += 1
-            n11 += 1
-            n12 += 1
-        n19 = region_height // 2 - 1
-        n20 = region_width * 3
-        n21 = 2 * region_width
-        n22 = row_stride
-        n23 = row_stride * (2 + region_height // 2)
-        n24 = n23 - row_stride
-        for n25 in range(1, n19):
-            for n26 in range(region_width):
+            work_current += 1
+            work_next += 1
+        interior_row_stop = region_height // 2 - 1
+        work_next = region_width * 3
+        work_current = region_width * 2
+        n22 = row_stride  # Coefficient row 1, near the top of the input region.
+        n23 = row_stride * (2 + region_height // 2)  # Coefficient row region_height // 2 + 2.
+        n24 = n23 - row_stride  # Coefficient row immediately before n23.
+        for _ in range(1, interior_row_stop):
+            for _ in range(region_width):
                 n27 = s16((s16(coefficients[n22] << 1) + s16(coefficients[n23] + coefficients[n24])) >> 2)
-                workspace[n20] = n27
-                workspace[n21] = s16((s16(workspace[n21 - region_width] + n27) >> 1) - coefficients[n24])
+                workspace[work_next] = n27
+                workspace[work_current] = s16((s16(workspace[work_current - region_width] + n27) >> 1) - coefficients[n24])
                 n22 += 1
                 n23 += 1
                 n24 += 1
-                n20 += 1
-                n21 += 1
+                work_next += 1
+                work_current += 1
             n22 += row_stride - region_width
             n23 += row_stride - region_width
             n24 = n23 - row_stride
-            n20 += region_width
-            n21 += region_width
+            work_next += region_width
+            work_current += region_width
         n29 = 0
         n30 = region_width // 2 + 1
         n31 = n30 - 1
         n32 = 0
         n33 = 0
         n34 = 1
-        for n35 in range(region_height):
+        for _ in range(region_height):
             n36 = workspace[n32 + n31]
             coefficients[n34] = s16(workspace[n32 + n29] + (s16(workspace[n32 + n30] + n36) >> 1))
             coefficients[n33] = s16(workspace[n32 + n29] + (s16(workspace[n32 + n30] - n36) >> 1) - n36 - (n36 << 1))
@@ -298,22 +313,22 @@ class CYIQ:
         n41 = 0
         n42 = region_width - 2
         n43 = n42 + 1
-        for n44 in range(region_height):
+        for _ in range(region_height):
             coefficients[n43] = s16(workspace[n41 + n37] + (s16(workspace[n41 + n39]) >> 1))
             coefficients[n42] = s16((((s16(workspace[n41 + n37] + workspace[n41 + n38] - workspace[n41 + n39]) << 1) + workspace[n41 + n40]) >> 2) - workspace[n41 + n39])
             n42 += row_stride
             n43 += row_stride
             n41 += region_width
-        n45 = region_width // 2 - 1
+        interior_column_stop = region_width // 2 - 1
         n46 = 0
         n47 = 2
         n48 = n47 + 1
-        for n49 in range(region_height):
+        for _ in range(region_height):
             n50 = n46 + 1
             n51 = n46 + region_width // 2 + 2
             n52 = n51 - 1
             n53 = coefficients[n47 - 1]
-            for n54 in range(1, n45):
+            for _ in range(1, interior_column_stop):
                 n55 = s16((s16(workspace[n51] + workspace[n52]) >> 1) + workspace[n50])
                 coefficients[n48] = n55
                 coefficients[n47] = s16((s16(n53 + n55) >> 1) - (workspace[n52] << 1))
@@ -324,7 +339,7 @@ class CYIQ:
                 n48 += 2
                 n53 = n55
             n46 += region_width
-            n47 += row_stride - 2 * n45 + 2
+            n47 += row_stride - 2 * interior_column_stop + 2
             n48 = n47 + 1
         return True
 
