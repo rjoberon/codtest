@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import BinaryIO
+from typing import BinaryIO, Optional
 
 try:
     from PIL import Image
@@ -23,37 +23,35 @@ class CodImageDecoder:
     """Read and progressively decode a CIS 3.0 wavelet-compressed image."""
 
     def __init__(self, input_cod_file: BinaryIO):
-        self.width = 300
-        self.height = 200
-        self.magic_marker = bytearray(8)
+        self.width: int
+        self.height: int
+        self.magic_marker: bytearray
         self.yiq_y = WaveletPlaneDecoder()
-        self.yiq_i = WaveletPlaneDecoder()
-        self.yiq_q = WaveletPlaneDecoder()
+        self.yiq_i: Optional[WaveletPlaneDecoder] = None
+        self.yiq_q: Optional[WaveletPlaneDecoder] = None
         self.input_cod_file = input_cod_file
         self.decompressed_image = None
-        self.compression_type = 0
-        self.encoder_type = 0
-        self.quantizer_type = 0
-        self.scb = 0
-        self.color_type_value = 0
-        self.mean = 0
-        self.width_value = 0
-        self.height_value = 0
-        self.bpp = 0
-        self.image_width = 0
-        self.image_height = 0
-        self.current_width = 0
-        self.current_height = 0
-        self.wavelet_levels = 0
-        self.file_buf = b""
-        self.color_type = 0
-        self.coded_size = 0
-        self.level_code_size = []
-        self.header_size = 0
-        self.comment_size = 0
-        self.rgb_data = []
-        self.off = 0
-        self.read_data = 0
+        self.compression_type: int
+        self.encoder_type: int
+        self.quantizer_type: int
+        self.scb: int
+        self.color_type_value: int
+        self.mean: int
+        self.bpp: int
+        self.image_width: int
+        self.image_height: int
+        self.current_width: int
+        self.current_height: int
+        self.wavelet_levels: int
+        self.file_buf: bytearray
+        self.color_type: int
+        self.coded_size: int
+        self.level_code_size: list[int]
+        self.header_size: int
+        self.comment_size: int
+        self.rgb_data: list[int]
+        self.off: int
+        self.read_data: int
 
     def read_file(self):
         """Read the fixed header and each color plane's decoder metadata."""
@@ -96,6 +94,8 @@ class CodImageDecoder:
         # Each component reads its own subsampling metadata, which determines its coefficient-buffer size.
         self.yiq_y.read_file(self.input_cod_file)
         if self.color_type == COLOR_IMAGE:
+            self.yiq_i = WaveletPlaneDecoder()
+            self.yiq_q = WaveletPlaneDecoder()
             self.yiq_i.read_file(self.input_cod_file)
             self.yiq_q.read_file(self.input_cod_file)
         header_bytes_read = self.input_cod_file.tell() - header_start
@@ -118,9 +118,10 @@ class CodImageDecoder:
         if not self.yiq_y.init_decompress(self.width, self.height, self.wavelet_levels):
             return False
         if self.color_type == COLOR_IMAGE:
-            if not self.yiq_i.init_decompress(self.width, self.height, self.wavelet_levels):
+            yiq_i, yiq_q = self._color_planes()
+            if not yiq_i.init_decompress(self.width, self.height, self.wavelet_levels):
                 return False
-            if not self.yiq_q.init_decompress(self.width, self.height, self.wavelet_levels):
+            if not yiq_q.init_decompress(self.width, self.height, self.wavelet_levels):
                 return False
         return True
 
@@ -128,22 +129,24 @@ class CodImageDecoder:
         """Release per-plane decoder state after all levels have been generated."""
         self.yiq_y.end_decompress()
         if self.color_type == COLOR_IMAGE:
-            self.yiq_i.end_decompress()
-            self.yiq_q.end_decompress()
+            yiq_i, yiq_q = self._color_planes()
+            yiq_i.end_decompress()
+            yiq_q.end_decompress()
 
     def yiq_to_rgb(self, level, yiq_y_power_data, yiq_i_power_data, yiq_q_power_data, rgb_image_data, image_width, image_height):
         """Convert the current YIQ level into ARGB pixels in the output buffer."""
         normalization_shift = self.wavelet_levels - level
         y_scale = 1 << max(0, level - self.yiq_y.levels)
         if self.color_type == COLOR_IMAGE:
-            i_scale = 1 << max(0, level - self.yiq_i.levels)
-            q_scale = 1 << max(0, level - self.yiq_q.levels)
+            yiq_i, yiq_q = self._color_planes()
+            i_scale = 1 << max(0, level - yiq_i.levels)
+            q_scale = 1 << max(0, level - yiq_q.levels)
             for image_pos_y in range(image_height - 1, -1, -1):
                 # The coefficient planes may have different subsampling; map each output row separately.
                 source_y = image_height - 1 - image_pos_y
                 y_row_idx = (source_y // y_scale) * self.yiq_y.width
-                i_row_idx = (source_y // i_scale) * self.yiq_i.width
-                q_row_idx = (source_y // q_scale) * self.yiq_q.width
+                i_row_idx = (source_y // i_scale) * yiq_i.width
+                q_row_idx = (source_y // q_scale) * yiq_q.width
                 for image_pos_x in range(image_width):
                     # Replicate a subsampled coefficient across its output pixel footprint.
                     y_idx = y_row_idx + image_pos_x // y_scale
@@ -205,15 +208,28 @@ class CodImageDecoder:
         self.off = self.yiq_y.decompress(self.file_buf, self.off, level)
         if self.off == -1:
             return False
+        yiq_i_power_data = None
+        yiq_q_power_data = None
         if self.color_type == COLOR_IMAGE:
-            for component in (self.yiq_i, self.yiq_q):
+            yiq_i, yiq_q = self._color_planes()
+            yiq_i_power_data = yiq_i.yiq_p
+            yiq_q_power_data = yiq_q.yiq_p
+            for component in (yiq_i, yiq_q):
                 # A subsampled plane has fewer effective levels than the luma plane.
                 if level > component.levels:
                     continue
                 self.off = component.decompress(self.file_buf, self.off, level)
                 if self.off == -1:
                     return False
-        self.yiq_to_rgb(level, self.yiq_y.yiq_p, self.yiq_i.yiq_p, self.yiq_q.yiq_p, self.rgb_data, self.current_width, self.current_height)
+        self.yiq_to_rgb(
+            level,
+            self.yiq_y.yiq_p,
+            yiq_i_power_data,
+            yiq_q_power_data,
+            self.rgb_data,
+            self.current_width,
+            self.current_height,
+        )
         if Image is not None:
             self.decompressed_image = Image.new("RGBA", (self.current_width, self.current_height))
             self.decompressed_image.putdata([self._argb_to_rgba(v) for v in self.rgb_data[: self.current_width * self.current_height]])
@@ -230,6 +246,11 @@ class CodImageDecoder:
 
     def get_levels(self):
         return self.wavelet_levels
+
+    def _color_planes(self) -> tuple[WaveletPlaneDecoder, WaveletPlaneDecoder]:
+        if self.yiq_i is None or self.yiq_q is None:
+            raise RuntimeError("Color plane decoders are not initialized")
+        return self.yiq_i, self.yiq_q
 
     @classmethod
     def open(cls, cod_image):
