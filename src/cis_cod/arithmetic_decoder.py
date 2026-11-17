@@ -38,10 +38,7 @@ class ArithmeticDecoder:
         if no_of_chars > ArithmeticDecoder.No_of_chars:
             raise ValueError("Number of characters is larger than the maximum number of characters allowed.")
         self.max_frequency = 8192
-        if no_of_chars == 1:
-            self.model_delta = 1000
-        else:
-            self.model_delta = 10
+        self.model_delta = 1000 if no_of_chars == 1 else 10
         self.no_of_chars = no_of_chars
         self.no_of_symbols = self.no_of_chars + 1
         self.eof_symbol = self.no_of_symbols
@@ -53,10 +50,7 @@ class ArithmeticDecoder:
         self.o_buf_index = 0
         self.init(no_of_chars)
         # The median shift likely reverses the encoder's mapping and helps coefficient quantization.
-        if no_of_chars % 2 == 0:
-            median_char_idx = no_of_chars // 2 - 1
-        else:
-            median_char_idx = no_of_chars // 2
+        median_char_idx = (no_of_chars // 2) if no_of_chars % 2 else (no_of_chars // 2 - 1)
         self.start_model()
         self.start_inputing_bits()
         self.start_decoding()
