@@ -25,11 +25,7 @@ def s16(value: int) -> int:
 class WaveletPlaneDecoder:
     def __init__(self):
         self.codec = ArithmeticDecoder()
-        self.level_data_size = [0] * 11
         self.quantizer = array('h', [0]) * MAX_SUBBANDS
-        self.mask_quantizer = array('h', [0]) * MAX_SUBBANDS
-        self.threshold = array('h', [0]) * MAX_SUBBANDS
-        self.mask_threshold = array('h', [0]) * MAX_SUBBANDS
         self.min = array('h', [0]) * MAX_SUBBANDS
         self.max = array('h', [0]) * MAX_SUBBANDS
         self.width = 0
