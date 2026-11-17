@@ -237,9 +237,6 @@ class CodImageDecoder:
         b = value & 0xFF
         return (r, g, b, alpha)
 
-    def get_levels(self):
-        return self.wavelet_levels
-
     @classmethod
     def open(cls, cod_image):
         """Decode every progressive level from a COD file and return the decoder."""
