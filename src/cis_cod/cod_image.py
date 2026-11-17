@@ -159,7 +159,6 @@ class CodImageDecoder:
                     g_part = 0 if g_value < 0 else (255 if g_value > 255 else g_value)
                     b_part = 0 if b_value < 0 else (255 if b_value > 255 else b_value)
                     rgb_image_data[image_pos_y * image_width + image_pos_x] = (0xFF000000 | (r_part << 16) | (g_part << 8) | b_part)
-            return
         else:
             for image_pos_y in range(image_height - 1, -1, -1):
                 source_y = image_height - 1 - image_pos_y
