@@ -31,7 +31,6 @@ class ArithmeticDecoder:
         self.buffer = 0
         self.bits_to_go = 0
         self.garbage_bits = 0
-        self.curbit = 0
 
     def init(self, no_of_chars):
         if no_of_chars > 255:
@@ -80,7 +79,6 @@ class ArithmeticDecoder:
     def start_inputing_bits(self):
         self.bits_to_go = 0
         self.garbage_bits = 0
-        self.curbit = 0
 
     def input_bit(self):
         if self.bits_to_go == 0:
@@ -97,7 +95,6 @@ class ArithmeticDecoder:
         bit = self.buffer & 0x1
         self.buffer >>= 1
         self.bits_to_go -= 1
-        self.curbit += 1
         return bit
 
     def start_decoding(self):
