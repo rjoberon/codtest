@@ -140,11 +140,11 @@ class WaveletPlaneDecoder:
     def wavelet_dequantization(self, n):
         level = self.levels - n
         if level < self.levels:
-            self.set_dequantization(self.quantizer[level * 3],     level, 'v', self.max[level * 3], self.min[level * 3])
-            self.set_dequantization(self.quantizer[level * 3 + 1], level, 'h', self.max[level * 3 + 1], self.min[level * 3 + 1])
-            self.set_dequantization(self.quantizer[level * 3 + 2], level, 'd', self.max[level * 3 + 2], self.min[level * 3 + 2])
+            self.set_dequantization(self.quantizer[level * 3],     level,     'v', self.max[level * 3], self.min[level * 3])
+            self.set_dequantization(self.quantizer[level * 3 + 1], level,     'h', self.max[level * 3 + 1], self.min[level * 3 + 1])
+            self.set_dequantization(self.quantizer[level * 3 + 2], level,     'd', self.max[level * 3 + 2], self.min[level * 3 + 2])
         else:
-            self.set_dequantization(self.quantizer[level * 3],     level, 'l', self.max[level * 3], self.min[level * 3])
+            self.set_dequantization(self.quantizer[level * 3],     level - 1, 'l', self.max[level * 3], self.min[level * 3])
         return True
 
     def data_rearr(self, decoded_values, n, n2):
