@@ -1,9 +1,6 @@
 def get_word(data, offset):
     """Read a signed little-endian 16-bit value from a byte buffer."""
-    value = ((0xFF & data[offset + 1]) << 8) | (0xFF & data[offset])
-    if value >= 0x8000:
-        value -= 0x10000
-    return value
+    return int.from_bytes(data[offset:offset + 2], byteorder="little", signed=True)
 
 
 def read_one_byte(stream):
@@ -14,33 +11,23 @@ def read_one_byte(stream):
 
 
 def read_bytes(stream, size):
-    chunks = []
+    data = bytearray()
     remaining = size
     while remaining > 0:
         chunk = stream.read(remaining)
         if not chunk:
             raise EOFError("Unexpected end of stream while reading bytes")
-        chunks.append(chunk)
+        data.extend(chunk)
         remaining -= len(chunk)
-    return b"".join(chunks)
+    return bytes(data)
 
 
 def read_word(stream):
-    buf = read_bytes(stream, 2)
-    value = ((0xFF & buf[1]) << 8) | (0xFF & buf[0])
-    if value >= 0x8000:
-        value -= 0x10000
-    return value
+    return int.from_bytes(read_bytes(stream, 2), byteorder="little", signed=True)
 
 
 def read_dword(stream):
-    buf = read_bytes(stream, 4)
-    return (
-        ((0xFF & buf[3]) << 24)
-        | ((0xFF & buf[2]) << 16)
-        | ((0xFF & buf[1]) << 8)
-        | (0xFF & buf[0])
-    )
+    return int.from_bytes(read_bytes(stream, 4), byteorder="little")
 
 
 def skip(stream, count):
