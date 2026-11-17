@@ -60,11 +60,12 @@ def read_bytes_with_off(stream, target, count, offset):
         offset = 0
     if offset + count > len(target):
         raise ValueError("read_bytes_with_off exceeds target buffer")
-    written = 0
-    while written < count:
-        chunk = stream.read(count - written)
-        if not chunk:
+    if count <= 0:
+        return True
+    view = memoryview(target)[offset:offset + count]
+    while view:
+        written = stream.readinto(view)
+        if not written:
             return False
-        target[offset + written:offset + written + len(chunk)] = chunk
-        written += len(chunk)
+        view = view[written:]
     return True
