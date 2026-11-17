@@ -106,7 +106,7 @@ class WaveletPlaneDecoder:
             return -1
         return self.cod_pointer
 
-    def set_dequantization(self, band_max, band_min, level, direction, count):
+    def set_dequantization(self, count, level, direction, band_max, band_min):
         if count == 0:
             positive_scale = 0.0
             negative_scale = 0.0
@@ -116,20 +116,15 @@ class WaveletPlaneDecoder:
         subband_width = self.width >> (level + 1)
         subband_height = self.height >> (level + 1)
         # Direction is an ASCII subband letter; each pair accepts lowercase and uppercase.
-        if direction in (76, 108):
-            # L: low-frequency quadrant at the top-left origin.
+        if direction == 'l':   # low-frequency quadrant at the top-left origin
             coefficient_index = 0
-        elif direction in (72, 104):
-            # H: horizontal-detail quadrant, shifted right by half the width.
+        elif direction == 'h': # horizontal-detail quadrant, shifted right by half the width
             coefficient_index = subband_width
-        elif direction in (86, 118):
-            # V: vertical-detail quadrant, shifted down by half the height.
+        elif direction == 'v': # vertical-detail quadrant, shifted down by half the height
             coefficient_index = subband_height * self.width
-        elif direction in (68, 100):
-            # D: diagonal-detail quadrant, shifted right and down.
+        elif direction == 'd': # diagonal-detail quadrant, shifted right and down
             coefficient_index = subband_height * self.width + subband_width
-        else:
-            # Unknown directions use the origin, the same offset as L.
+        else: # unknown directions use the origin, the same offset as l
             coefficient_index = 0
         # Scale the selected subband row by row, skipping the rest of each full-width row.
         for _ in range(subband_height):
@@ -145,11 +140,11 @@ class WaveletPlaneDecoder:
     def wavelet_dequantization(self, n):
         level = self.levels - n
         if level < self.levels:
-            self.set_dequantization(self.max[level * 3], self.min[level * 3], level, ord('v'), self.quantizer[level * 3])
-            self.set_dequantization(self.max[level * 3 + 1], self.min[level * 3 + 1], level, ord('h'), self.quantizer[level * 3 + 1])
-            self.set_dequantization(self.max[level * 3 + 2], self.min[level * 3 + 2], level, ord('d'), self.quantizer[level * 3 + 2])
+            self.set_dequantization(self.quantizer[level * 3],     level, 'v', self.max[level * 3], self.min[level * 3])
+            self.set_dequantization(self.quantizer[level * 3 + 1], level, 'h', self.max[level * 3 + 1], self.min[level * 3 + 1])
+            self.set_dequantization(self.quantizer[level * 3 + 2], level, 'd', self.max[level * 3 + 2], self.min[level * 3 + 2])
         else:
-            self.set_dequantization(self.max[level * 3], self.min[level * 3], level - 1, ord('l'), self.quantizer[level * 3])
+            self.set_dequantization(self.quantizer[level * 3],     level, 'l', self.max[level * 3], self.min[level * 3])
         return True
 
     def data_rearr(self, decoded_values, n, n2):
