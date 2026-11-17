@@ -233,11 +233,8 @@ class WaveletPlaneDecoder:
         region_height = self.height >> (self.levels - level)
         region_width = self.width >> (self.levels - level)
         if level <= self.levels - self.zero_levels:
-            if not self.wavelet_recons_t(self.yiq_p, region_height, region_width, self.width):
-                return False
-        elif not self.wavelet_recons_t_fast(self.yiq_p, region_height, region_width, self.width):
-            return False
-        return True
+            return self.wavelet_recons_t(self.yiq_p, region_height, region_width, self.width)
+        return self.wavelet_recons_t_fast(self.yiq_p, region_height, region_width, self.width)
 
     def wavelet_recons_t(self, coefficients, region_height, region_width, row_stride):
         workspace = array('h', [0]) * (region_height * region_width)
