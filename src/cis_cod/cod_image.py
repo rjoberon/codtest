@@ -40,8 +40,6 @@ class CodImageDecoder:
         self.bpp: int
         self.image_width: int
         self.image_height: int
-        self.current_width: int
-        self.current_height: int
         self.wavelet_levels: int
         self.file_buf: bytearray
         self.color_type: int
@@ -200,8 +198,8 @@ class CodImageDecoder:
             return False
         self.read_data += self.level_code_size[level]
         self.mean = self.yiq_y.mean
-        self.current_width = self.image_width >> (self.wavelet_levels - level)
-        self.current_height = self.image_height >> (self.wavelet_levels - level)
+        current_width = self.image_width >> (self.wavelet_levels - level)
+        current_height = self.image_height >> (self.wavelet_levels - level)
         self.off = self.yiq_y.decompress(self.file_buf, self.off, level)
         if self.off == -1:
             return False
@@ -223,12 +221,12 @@ class CodImageDecoder:
             yiq_i_power_data,
             yiq_q_power_data,
             self.rgb_data,
-            self.current_width,
-            self.current_height,
+            current_width,
+            current_height,
         )
         if Image is not None:
-            self.decompressed_image = Image.new("RGBA", (self.current_width, self.current_height))
-            self.decompressed_image.putdata([self._argb_to_rgba(v) for v in self.rgb_data[: self.current_width * self.current_height]])
+            self.decompressed_image = Image.new("RGBA", (current_width, current_height))
+            self.decompressed_image.putdata([self._argb_to_rgba(v) for v in self.rgb_data[: current_width * current_height]])
         return True
 
     @staticmethod
